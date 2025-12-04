@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<body>
+<canvas id="iconCanvas" width="128" height="128"></canvas>
+<script>
+const canvas = document.getElementById('iconCanvas');
+const ctx = canvas.getContext('2d');
+
+// 绘制背景
+ctx.fillStyle = '#4285f4';
+ctx.fillRect(0, 0, 128, 128);
+
+// 绘制书签图标
+ctx.fillStyle = 'white';
+ctx.beginPath();
+ctx.moveTo(40, 30);
+ctx.lineTo(90, 30);
+ctx.lineTo(90, 100);
+ctx.lineTo(70, 80);
+ctx.lineTo(50, 100);
+ctx.closePath();
+ctx.fill();
+
+// 绘制书签顶部
+ctx.fillStyle = '#3367d6';
+ctx.fillRect(40, 30, 50, 15);
+</script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "书签导航网站",
+  "version": "1.0",
+  "description": "将浏览器书签以导航网站形式展现，替代默认新标签页",
+  "permissions": [
+    "bookmarks"
+  ],
+  "chrome_url_overrides": {
+    "newtab": "newtab.html"
+  },
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  }
+}
