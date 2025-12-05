@@ -3,35 +3,67 @@ let allBookmarks = [];
 let currentFolder = null;
 let expandedFolders = new Set(); // Store IDs of expanded folders
 
-// 立即执行主题检查，防止页面闪烁
-if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-    document.documentElement.classList.add('dark');
-} else {
-    document.documentElement.classList.remove('dark');
+// --- 主题切换逻辑 ---
+let currentThemePreference = localStorage.getItem('color-theme') || 'system'; // Default to system
+
+function applyTheme(preference) {
+    const htmlElement = document.documentElement;
+    const lightIcon = document.getElementById('theme-toggle-light-icon');
+    const darkIcon = document.getElementById('theme-toggle-dark-icon');
+    const systemIcon = document.getElementById('theme-toggle-system-icon');
+
+    // Hide all icons first
+    [lightIcon, darkIcon, systemIcon].forEach(icon => { if(icon) icon.classList.add('hidden'); });
+
+    if (preference === 'dark') {
+        htmlElement.classList.add('dark');
+        if (darkIcon) darkIcon.classList.remove('hidden');
+    } else if (preference === 'light') {
+        htmlElement.classList.remove('dark');
+        if (lightIcon) lightIcon.classList.remove('hidden');
+    } else { // 'system'
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            htmlElement.classList.add('dark');
+        } else {
+            htmlElement.classList.remove('dark');
+        }
+        if (systemIcon) systemIcon.classList.remove('hidden');
+    }
+    localStorage.setItem('color-theme', preference);
+    currentThemePreference = preference; // Update global state
 }
+
+// 立即执行主题检查，防止页面闪烁
+// Note: Icon visibility is handled by applyTheme, so we need to call it directly.
+applyTheme(currentThemePreference);
 
 // 初始化函数
 document.addEventListener('DOMContentLoaded', function () {
     loadBookmarks();
     setupSearch();
-    setupTheme();
+    setupThemeEventListener(); // Renamed to avoid confusion with immediate apply
 });
 
-// --- 主题切换逻辑 ---
-function setupTheme() {
+function setupThemeEventListener() {
     const themeToggleBtn = document.getElementById('theme-toggle');
     
     if (themeToggleBtn) {
         themeToggleBtn.addEventListener('click', function() {
-            // toggle icons inside button? 
-            // Tailwind 'dark:' classes on svg handles visibility, we just need to toggle 'dark' class on html
-            
-            if (document.documentElement.classList.contains('dark')) {
-                document.documentElement.classList.remove('dark');
-                localStorage.setItem('color-theme', 'light');
-            } else {
-                document.documentElement.classList.add('dark');
-                localStorage.setItem('color-theme', 'dark');
+            let nextPreference;
+            if (currentThemePreference === 'light') {
+                nextPreference = 'dark';
+            } else if (currentThemePreference === 'dark') {
+                nextPreference = 'system';
+            } else { // currentThemePreference === 'system'
+                nextPreference = 'light';
+            }
+            applyTheme(nextPreference);
+        });
+
+        // Listen for system theme changes if current preference is 'system'
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+            if (currentThemePreference === 'system') {
+                applyTheme('system'); // Re-apply to reflect system change
             }
         });
     }
