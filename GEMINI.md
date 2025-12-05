@@ -48,11 +48,32 @@ UI 界面已使用 **Tailwind CSS** 风格进行了全面重构，提供了现�
     *   自动尝试多源加载图标 (本地 -> Google -> Icon Horse)。
     *   加载失败时自动回退到精美的 SVG 占位符。
 
-## 开发指南 (构建 CSS)
+## 开发指南 (Development Workflow)
 
-如果您需要修改样式并重新生成 CSS：
+本项目采用 Tailwind CSS 标准构建流程。为了确保样式的一致性和可维护性，**请勿直接手动修改 `style.css`**。
 
-1.  确保安装了 Node.js。
-2.  运行 `npm install` 安装依赖。
-3.  修改 `src/input.css` 或 HTML/JS 中的类名。
-4.  运行 `npx tailwindcss -i ./src/input.css -o ./style.css` 进行构建。
+### 1. 环境准备
+确保您的系统已安装 Node.js。首次开发前，请安装项目依赖：
+
+```bash
+npm install
+```
+
+### 2. 开发模式
+在开发过程中，运行以下命令启动 Tailwind CLI 的监听模式。它会实时监控 HTML/JS 文件的变化，并自动重新编译 `style.css`。
+
+```bash
+npm run dev
+```
+
+### 3. 生产构建
+在准备发布或提交代码前，运行构建命令以生成压缩优化后的 CSS 文件：
+
+```bash
+npm run build
+```
+
+### 注意事项
+*   目前的 `style.css` 包含了一个手动生成的快照，以支持非 Node 环境下的预览。
+*   一旦您开始使用 `npm run dev`，该文件将被自动重写，这是正常的。
+

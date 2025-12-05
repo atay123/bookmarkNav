@@ -30,7 +30,16 @@ a {
     color: inherit;
 }
 
-
+/* Dark Mode Base Overrides */
+@media (prefers-color-scheme: dark) {
+    html, body {
+        background-color: rgb(15 23 42); /* bg-slate-900 */
+        color: rgb(226 232 240); /* text-slate-200 */
+    }
+    *, ::before, ::after {
+        border-color: rgb(51 65 85); /* border-slate-700 */
+    }
+}
 
 
 /* Layout & Sizing */
@@ -238,3 +247,371 @@ a {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* --- DARK MODE SUPPORT --- */
+@media (prefers-color-scheme: dark) {
+    .dark\:bg-slate-900 { background-color: rgb(15 23 42); }
+    .dark\:bg-slate-900\/50 { background-color: rgb(15 23 42 / 0.5); }
+    .dark\:bg-slate-900\/30 { background-color: rgb(15 23 42 / 0.3); }
+    .dark\:hover\:bg-indigo-900\/50:hover { background-color: rgb(49 46 129 / 0.5); }
+    .dark\:bg-indigo-900\/50 { background-color: rgb(49 46 129 / 0.5); }
+    
+    .dark\:bg-slate-800 { background-color: rgb(30 41 59); }
+    .dark\:hover\:bg-slate-800:hover { background-color: rgb(30 41 59); }
+    .dark\:group-hover\:bg-slate-800:hover { background-color: rgb(30 41 59); }
+    
+    .dark\:bg-slate-700 { background-color: rgb(51 65 85); }
+    .dark\:bg-slate-700\/50 { background-color: rgb(51 65 85 / 0.5); }
+
+    .dark\:border-slate-700 { border-color: rgb(51 65 85); }
+    .dark\:border-slate-600 { border-color: rgb(71 85 105); }
+    .dark\:hover\:border-indigo-500\/50:hover { border-color: rgb(99 102 241 / 0.5); }
+
+    .dark\:text-slate-100 { color: rgb(241 245 249); }
+    .dark\:text-slate-200 { color: rgb(226 232 240); }
+    .dark\:text-slate-400 { color: rgb(148 163 184); }
+    .dark\:text-slate-500 { color: rgb(100 116 139); }
+    .dark\:text-white { color: rgb(255 255 255); }
+    
+    .dark\:text-indigo-300 { color: rgb(165 180 252); }
+    .dark\:text-indigo-400 { color: rgb(129 140 248); }
+    .dark\:group-hover\:text-indigo-300:hover { color: rgb(165 180 252); }
+    .dark\:group-hover\:text-indigo-400:hover { color: rgb(129 140 248); }
+    
+    .dark\:ring-indigo-700 { --tw-ring-color: rgb(67 56 202); }
+    
+    .dark\:placeholder-slate-500::placeholder { color: rgb(100 116 139); }
+    
+    .dark\:shadow-none { box-shadow: none; }
+    .dark\:hover\:shadow-none:hover { box-shadow: none; }
+    
+    .dark\:selection\:bg-indigo-900::selection { background-color: rgb(49 46 129); }
+    .dark\:selection\:text-indigo-300::selection { color: rgb(165 180 252); }
+}
+
+/* --- Manual Overrides for Modal & Context Menu (Build Fix) --- */
+
+.hidden { display: none !important; }
+
+/* Context Menu */
+#context-menu {
+    position: fixed;
+    z-index: 50;
+    width: 9rem;
+    background-color: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    border: 1px solid rgb(241 245 249);
+    padding: 0.375rem 0;
+    transform-origin: top left;
+    transition: all 100ms;
+}
+#context-menu.scale-95 { transform: scale(0.95); opacity: 0; }
+#context-menu.scale-100 { transform: scale(1); opacity: 1; }
+
+#context-menu button {
+    width: 100%;
+    text-align: left;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+#context-menu button:hover { background-color: rgb(248 250 252); }
+#context-menu #ctx-delete { color: rgb(220 38 38); }
+#context-menu #ctx-delete:hover { background-color: rgb(254 242 242); }
+
+/* Modal */
+#edit-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    overflow-y: auto;
+}
+#edit-modal .fixed.inset-0 { /* Backdrop */
+    background-color: rgba(15, 23, 42, 0.2);
+    backdrop-filter: blur(4px);
+    position: fixed;
+    inset: 0;
+}
+#edit-modal .flex {
+    display: flex;
+    min-height: 100%;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    pointer-events: none; /* Allow click-through on container */
+}
+#edit-modal .relative {
+    pointer-events: auto; /* Re-enable clicks on modal box */
+    position: relative;
+    background-color: white;
+    width: 100%;
+    max-width: 28rem;
+    border-radius: 1rem;
+    box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+    overflow: hidden;
+}
+
+/* Dark Mode Overrides */
+@media (prefers-color-scheme: dark) {
+    #context-menu {
+        background-color: rgb(30 41 59);
+        border-color: rgb(51 65 85);
+    }
+    #context-menu button { color: rgb(203 213 225); }
+    #context-menu button:hover { background-color: rgb(51 65 85); }
+    #context-menu #ctx-delete:hover { background-color: rgba(127, 29, 29, 0.2); }
+
+    #edit-modal .relative {
+        background-color: rgb(30 41 59);
+        border: 1px solid rgb(51 65 85);
+    }
+    #edit-modal label { color: rgb(203 213 225); }
+    #edit-modal h3 { color: white; }
+    #edit-modal input {
+        background-color: rgb(51 65 85);
+        border-color: rgb(71 85 105);
+        color: white;
+    }
+    #edit-modal .bg-slate-50 {
+        background-color: rgba(30, 41, 59, 0.5);
+        border-top: 1px solid rgb(51 65 85);
+    }
+    #edit-modal #btn-cancel {
+        background-color: rgb(51 65 85);
+        color: white;
+        border: 1px solid rgb(71 85 105);
+    }
+    #edit-modal #btn-cancel:hover { background-color: rgb(71 85 105); }
+}
+
+/* =========================================
+   MANUAL CSS OVERRIDES (Fixing Build Issues)
+   ========================================= */
+
+/* 1. Utility Classes Fix */
+.hidden { display: none !important; }
+
+/* 2. Context Menu Styles */
+#context-menu {
+    position: fixed;
+    z-index: 9999; /* Ensure it's on top */
+    width: 150px;
+    background-color: white;
+    border-radius: 0.75rem;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    padding: 0.25rem 0;
+    transform-origin: top left;
+    transition: opacity 0.1s, transform 0.1s;
+}
+
+#context-menu.opacity-0 { opacity: 0; pointer-events: none; }
+#context-menu.scale-95 { transform: scale(0.95); }
+#context-menu.opacity-100 { opacity: 1; pointer-events: auto; }
+#context-menu.scale-100 { transform: scale(1); }
+
+#context-menu button {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    text-align: left;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: #334155;
+}
+#context-menu button:hover { background-color: #f1f5f9; color: #4f46e5; }
+#context-menu #ctx-delete { color: #dc2626; }
+#context-menu #ctx-delete:hover { background-color: #fef2f2; }
+
+/* 3. Modal Styles (Fixing Layout & Z-Index) */
+#edit-modal {
+    position: fixed;
+    inset: 0; /* top:0; right:0; bottom:0; left:0 */
+    z-index: 10000; /* Highest z-index */
+    overflow-y: auto;
+}
+
+/* Backdrop */
+#edit-modal > div.fixed.inset-0 {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: -1; /* Behind the content */
+}
+
+/* Flex Container for Centering */
+#edit-modal > div.flex {
+    display: flex;
+    min-height: 100%;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+/* Modal Box */
+#edit-modal .relative {
+    position: relative;
+    background-color: white;
+    width: 100%;
+    max-width: 28rem; /* 448px */
+    border-radius: 1rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+    border: 1px solid #f1f5f9;
+}
+
+/* Form Elements */
+#edit-modal h3 {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-top: 0;
+    margin-bottom: 1rem;
+}
+
+#edit-modal label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #334155;
+    margin-bottom: 0.25rem;
+}
+
+#edit-modal input {
+    width: 100%;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    background-color: #f8fafc;
+    box-sizing: border-box; /* Critical for padding */
+}
+#edit-modal input:focus {
+    outline: 2px solid #6366f1;
+    outline-offset: 2px;
+    border-color: #6366f1;
+}
+
+/* Footer Buttons */
+#edit-modal .bg-slate-50 {
+    background-color: #f8fafc;
+    padding: 1rem 1.5rem;
+    display: flex;
+    flex-direction: row-reverse; /* Save on right */
+    gap: 0.75rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+#btn-save {
+    background-color: #4f46e5;
+    color: white;
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    border: none;
+    cursor: pointer;
+}
+#btn-save:hover { background-color: #4338ca; }
+
+#btn-cancel {
+    background-color: white;
+    color: #0f172a;
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+}
+#btn-cancel:hover { background-color: #f1f5f9; }
+
+/* 4. Dark Mode Overrides */
+@media (prefers-color-scheme: dark) {
+    #context-menu { background-color: #1e293b; border-color: #334155; }
+    #context-menu button { color: #cbd5e1; }
+    #context-menu button:hover { background-color: #334155; }
+    
+    #edit-modal .relative { background-color: #1e293b; border-color: #334155; }
+    #edit-modal h3 { color: #f8fafc; }
+    #edit-modal label { color: #cbd5e1; }
+    #edit-modal input { background-color: #334155; border-color: #475569; color: white; }
+    #edit-modal .bg-slate-50 { background-color: #0f172a; border-color: #334155; }
+    
+    #btn-cancel { background-color: #334155; border-color: #475569; color: white; }
+    #btn-cancel:hover { background-color: #475569; }
+}
+
+/* =========================================
+   URGENT FIX: EVENT BUBBLING & Z-INDEX
+   ========================================= */
+
+/* Ensure the modal container allows clicks but manages stacking */
+#edit-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: block; /* Override hidden if logic removes it */
+}
+
+#edit-modal.hidden {
+    display: none !important;
+}
+
+/* 1. BACKDROP (Layer 1) */
+#edit-modal > div.fixed.inset-0 {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5); /* Darker for visibility */
+    backdrop-filter: blur(2px);
+    z-index: 10; /* Explicit low z-index */
+    pointer-events: auto; /* Catch clicks to prevent clicking background */
+}
+
+/* 2. LAYOUT CONTAINER (Layer 2 - Passthrough) */
+#edit-modal > div.flex {
+    position: relative;
+    z-index: 20; /* Above backdrop */
+    pointer-events: none; /* Let clicks pass through to children or backdrop */
+    display: flex;
+    min-height: 100%;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+}
+
+/* 3. MODAL CONTENT (Layer 3 - Interactive) */
+#edit-modal .relative {
+    position: relative;
+    z-index: 30; /* Highest within modal */
+    pointer-events: auto !important; /* FORCE ENABLE CLICKS */
+    background-color: white;
+    width: 100%;
+    max-width: 28rem;
+    border-radius: 0.75rem;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+}
+
+/* Ensure Buttons are clickable */
+#btn-save, #btn-cancel {
+    position: relative;
+    z-index: 40;
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+/* Debugging Border (Optional: Remove later if fixed) */
+/* 
+#edit-modal .relative { border: 2px solid red; } 
+#btn-save { border: 2px solid green; }
+*/

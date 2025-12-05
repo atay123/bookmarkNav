@@ -4,7 +4,8 @@
   "version": "1.0",
   "description": "将浏览器书签以导航网站形式展现，替代默认新标签页",
   "permissions": [
-    "bookmarks"
+    "bookmarks",
+    "favicon"
   ],
   "chrome_url_overrides": {
     "newtab": "newtab.html"

@@ -9,15 +9,15 @@
 </head>
 
 <body
-    class="bg-slate-50 text-slate-800 h-screen flex overflow-hidden font-sans antialiased selection:bg-indigo-100 selection:text-indigo-700">
+    class="bg-slate-50 text-slate-800 h-screen flex overflow-hidden font-sans antialiased selection:bg-indigo-100 selection:text-indigo-700 dark:bg-slate-900 dark:text-slate-200 dark:selection:bg-indigo-900 dark:selection:text-indigo-300">
 
-    <div class="container mx-auto max-w-[1920px] flex w-full h-full bg-white shadow-2xl overflow-hidden">
+    <div class="container mx-auto max-w-[1920px] flex w-full h-full bg-white shadow-2xl overflow-hidden dark:bg-slate-900 dark:shadow-none">
 
         <!-- 左侧书签目录 Sidebar -->
         <aside
-            class="w-72 bg-slate-50 border-r border-slate-200 flex flex-col flex-shrink-0 transition-all duration-300">
-            <div class="p-6 border-b border-slate-200 bg-white/50 backdrop-blur-sm sticky top-0 z-10">
-                <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+            class="w-72 bg-slate-50 border-r border-slate-200 flex flex-col flex-shrink-0 transition-all duration-300 dark:bg-slate-900 dark:border-slate-700">
+            <div class="p-6 border-b border-slate-200 bg-white/50 backdrop-blur-sm sticky top-0 z-10 dark:bg-slate-900/50 dark:border-slate-700">
+                <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2 dark:text-slate-100">
                     <span
                         class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-indigo-200">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -36,7 +36,7 @@
         </aside>
 
         <!-- 右侧站点导航 Main Content -->
-        <main class="flex-1 flex flex-col min-w-0 bg-white relative">
+        <main class="flex-1 flex flex-col min-w-0 bg-white relative dark:bg-slate-900">
             <!-- 顶部装饰条 -->
             <div
                 class="h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 w-full absolute top-0 left-0 z-20">
@@ -44,16 +44,16 @@
 
             <!-- 头部 -->
             <header
-                class="px-12 py-4 border-b border-slate-200 bg-white/50 backdrop-blur-sm flex justify-between items-center sticky top-0 z-10">
+                class="px-12 py-4 border-b border-slate-200 bg-white/50 backdrop-blur-sm flex justify-between items-center sticky top-0 z-10 dark:bg-slate-900/50 dark:border-slate-700">
                 <div>
-                    <h2 id="current-folder-title" class="text-2xl font-bold text-slate-800 tracking-tight">常用网站</h2>
-                    <p class="text-slate-500 text-sm mt-1" id="folder-count">加载中...</p>
+                    <h2 id="current-folder-title" class="text-2xl font-bold text-slate-800 tracking-tight dark:text-slate-100">常用网站</h2>
+                    <p class="text-slate-500 text-sm mt-1 dark:text-slate-400" id="folder-count">加载中...</p>
                 </div>
                 <div class="flex items-center gap-3">
                     <div class="relative group">
                         <input type="text" id="search-input" placeholder="搜索书签..."
-                            class="w-72 pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all shadow-sm group-hover:bg-white group-hover:shadow-md">
-                        <svg class="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors group-hover:text-indigo-500"
+                            class="w-72 pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all shadow-sm group-hover:bg-white group-hover:shadow-md dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:group-hover:bg-slate-800 dark:placeholder-slate-500">
+                        <svg class="w-5 h-5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors group-hover:text-indigo-500 dark:text-slate-500"
                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
@@ -66,22 +66,62 @@
             <div class="px-12 pt-6 pb-2">
                 <form action="https://www.google.com/search" method="get" class="relative max-w-2xl mx-auto group">
                     <div
-                        class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-hover:text-indigo-500 transition-colors">
+                        class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-hover:text-indigo-500 transition-colors dark:text-slate-500">
                         <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                             <path
                                 d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.748L12.545,10.239z" />
                         </svg>
                     </div>
                     <input type="text" name="q" placeholder="在 Google 上搜索..." autocomplete="off"
-                        class="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl shadow-sm text-slate-700 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/50 transition-all hover:shadow-md">
+                        class="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl shadow-sm text-slate-700 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/50 transition-all hover:shadow-md dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:placeholder-slate-500 dark:hover:bg-slate-800">
                 </form>
             </div>
 
             <!-- 站点列表容器 -->
-            <div id="bookmark-sites" class="flex-1 overflow-y-auto px-12 py-8 bg-slate-50/50">
+            <div id="bookmark-sites" class="flex-1 overflow-y-auto px-12 py-8 bg-slate-50/50 dark:bg-slate-900">
                 <!-- JS动态生成内容 -->
             </div>
         </main>
+    </div>
+
+    <!-- 右键菜单 (Context Menu) -->
+    <div id="context-menu" class="hidden fixed z-50 w-36 bg-white rounded-xl shadow-lg border border-slate-100 py-1.5 ring-1 ring-black/5 transform origin-top-left transition-all duration-100 scale-95 opacity-0 dark:bg-slate-800 dark:border-slate-700 dark:ring-white/10">
+        <button id="ctx-edit" class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-indigo-600 flex items-center gap-2 transition-colors dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-indigo-400">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+            编辑
+        </button>
+        <button id="ctx-delete" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors dark:text-red-400 dark:hover:bg-red-900/20">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            删除
+        </button>
+    </div>
+
+    <!-- 编辑模态框 (Edit Modal) -->
+    <div id="edit-modal" class="hidden fixed inset-0 z-[60] overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <!-- 背景遮罩 -->
+        <div class="fixed inset-0 bg-slate-900/20 backdrop-blur-sm transition-opacity dark:bg-slate-900/50"></div>
+
+        <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+            <div class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-md border border-slate-100 dark:bg-slate-800 dark:border-slate-700">
+                <div class="px-6 py-6">
+                    <h3 class="text-lg font-bold leading-6 text-slate-900 mb-4 dark:text-slate-100" id="modal-title">编辑书签</h3>
+                    <form id="edit-form" class="space-y-4">
+                        <div>
+                            <label for="edit-title" class="block text-sm font-medium text-slate-700 mb-1 dark:text-slate-300">名称</label>
+                            <input type="text" id="edit-title" class="w-full rounded-lg border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 dark:placeholder-slate-400" required>
+                        </div>
+                        <div>
+                            <label for="edit-url" class="block text-sm font-medium text-slate-700 mb-1 dark:text-slate-300">网址</label>
+                            <input type="url" id="edit-url" class="w-full rounded-lg border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 dark:placeholder-slate-400" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="bg-slate-50 px-6 py-4 flex flex-row-reverse gap-3 dark:bg-slate-800/50 dark:border-t dark:border-slate-700">
+                    <button type="button" id="btn-save" class="inline-flex w-full justify-center rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 sm:w-auto transition-colors">保存</button>
+                    <button type="button" id="btn-cancel" class="inline-flex w-full justify-center rounded-lg bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50 sm:w-auto transition-colors dark:bg-slate-700 dark:text-slate-200 dark:ring-slate-600 dark:hover:bg-slate-600">取消</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="script.js"></script>
