@@ -1,6 +1,7 @@
 // 全局变量存储书签数据
 let allBookmarks = [];
 let currentFolder = null;
+let expandedFolders = new Set(); // Store IDs of expanded folders
 
 // 初始化函数
 document.addEventListener('DOMContentLoaded', function() {
@@ -121,6 +122,29 @@ function renderBookmarkTree(bookmark) {
     const treeContainer = document.getElementById('bookmark-tree');
     treeContainer.innerHTML = '';
     
+    // Restore expanded state
+    try {
+        const saved = localStorage.getItem('expandedFolders');
+        if (saved) {
+            expandedFolders = new Set(JSON.parse(saved));
+        } else {
+            // Default: Expand top-level folders (usually "Bookmarks Bar" and "Other Bookmarks")
+            if (bookmark.children) {
+                bookmark.children.forEach(child => expandedFolders.add(child.id));
+            }
+        }
+    } catch(e) { 
+        console.error("Failed to load expanded state", e);
+        // Fallback default
+        if (bookmark.children) {
+            bookmark.children.forEach(child => expandedFolders.add(child.id));
+        }
+    }
+
+    function saveExpandedState() {
+        localStorage.setItem('expandedFolders', JSON.stringify([...expandedFolders]));
+    }
+    
     function renderNode(node, container, level = 0) {
         if (level === 0 && !node.title) {
              if (node.children) {
@@ -133,6 +157,7 @@ function renderBookmarkTree(bookmark) {
              const itemWrapper = document.createElement('div');
              
              const nodeElement = document.createElement('div');
+             // Added pointer-events-none to children below, so drag events trigger on nodeElement
              nodeElement.className = `
                 flex items-center px-3 py-2 cursor-pointer transition-all duration-200
                 hover:bg-slate-100 group mb-0.5 text-sm font-medium text-slate-600
@@ -142,23 +167,79 @@ function renderBookmarkTree(bookmark) {
              `;
              nodeElement.dataset.id = node.id;
              
+             // Check for sub-folders (only folders can be expanded)
              const hasSubFolders = node.children.some(child => child.children);
+             const isExpanded = expandedFolders.has(node.id);
              
+             // Chevron Icon (Increased hit area)
+             let chevronHtml = '';
+             if (hasSubFolders) {
+                 chevronHtml = `
+                    <span class="mr-1 w-6 h-6 flex items-center justify-center rounded hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors folder-toggle transform ${isExpanded ? 'rotate-90' : ''}">
+                        <svg class="w-3 h-3 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </span>
+                 `;
+             } else {
+                 chevronHtml = `<span class="w-6 mr-1"></span>`;
+             }
+
              nodeElement.innerHTML = `
-                <span class="mr-2 text-slate-400 group-hover:text-indigo-500 transition-colors dark:text-slate-500 dark:group-hover:text-indigo-400">
+                ${chevronHtml}
+                <span class="mr-2 text-slate-400 group-hover:text-indigo-500 transition-colors dark:text-slate-500 dark:group-hover:text-indigo-400 pointer-events-none">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
                 </span>
-                <span class="truncate flex-1">${node.title}</span>
+                <span class="truncate flex-1 pointer-events-none select-none">${node.title}</span>
              `;
              
+             // Define toggle function
+             const toggleFolder = () => {
+                 if (!hasSubFolders) return;
+
+                 const toggleBtn = nodeElement.querySelector('.folder-toggle');
+                 const childContainer = itemWrapper.querySelector('.children-container');
+                 
+                 const currentlyExpanded = expandedFolders.has(node.id);
+
+                 if (currentlyExpanded) {
+                     // Collapse
+                     expandedFolders.delete(node.id);
+                     if (toggleBtn) toggleBtn.classList.remove('rotate-90');
+                     if (childContainer) childContainer.classList.add('hidden');
+                 } else {
+                     // Expand
+                     expandedFolders.add(node.id);
+                     if (toggleBtn) toggleBtn.classList.add('rotate-90');
+                     if (childContainer) childContainer.classList.remove('hidden');
+                 }
+                 saveExpandedState();
+             };
+
+             // Toggle Click (Chevron)
+             if (hasSubFolders) {
+                 const toggleBtn = nodeElement.querySelector('.folder-toggle');
+                 toggleBtn.addEventListener('click', (e) => {
+                     e.stopPropagation(); 
+                     toggleFolder();
+                 });
+             }
+             
+             // Item Click (Selection + Toggle)
              nodeElement.addEventListener('click', function(e) {
                  e.stopPropagation();
+                 
+                 // 1. Toggle Folder (Always toggle on click as per user request)
+                 if (hasSubFolders) {
+                     toggleFolder();
+                 }
+
+                 // 2. Load Content
                  chrome.bookmarks.getSubTree(node.id, (results) => {
                     if (results && results.length > 0) {
                         renderBookmarkSites(results[0]);
                     }
                  });
 
+                 // 3. Visual Selection State
                  document.querySelectorAll('.bookmark-folder-item').forEach(el => {
                      el.classList.remove('border-indigo-500', 'bg-indigo-50', 'text-indigo-700', 'dark:border-indigo-500', 'dark:bg-indigo-900/20', 'dark:text-indigo-300');
                      el.classList.add('border-transparent', 'text-slate-600', 'hover:bg-slate-100', 'dark:text-slate-400', 'dark:hover:bg-slate-800');
@@ -167,12 +248,52 @@ function renderBookmarkTree(bookmark) {
                  nodeElement.classList.remove('border-transparent', 'text-slate-600', 'hover:bg-slate-100', 'dark:text-slate-400', 'dark:hover:bg-slate-800');
                  nodeElement.classList.add('border-indigo-500', 'bg-indigo-50', 'text-indigo-700', 'dark:border-indigo-500', 'dark:bg-indigo-900/20', 'dark:text-indigo-300');
              });
+
+             // --- 右键菜单 (文件夹) ---
+             nodeElement.addEventListener('contextmenu', function(e) {
+                 e.preventDefault();
+                 e.stopPropagation();
+                 showContextMenu(e.clientX, e.clientY, node.id, 'folder');
+             });
+
+             // --- 拖拽至文件夹逻辑 ---
+             nodeElement.addEventListener('dragover', (e) => {
+                 e.preventDefault(); 
+                 e.stopPropagation();
+                 // Add highlight
+                 nodeElement.classList.add('bg-indigo-100', 'dark:bg-slate-700');
+             });
+
+             nodeElement.addEventListener('dragleave', (e) => {
+                 e.preventDefault();
+                 e.stopPropagation();
+                 
+                 // Use relatedTarget to avoid flickering when entering children
+                 // However, since we added pointer-events-none to children, this might not be strictly necessary
+                 // but it's good practice.
+                 if (nodeElement.contains(e.relatedTarget)) return;
+
+                 nodeElement.classList.remove('bg-indigo-100', 'dark:bg-slate-700');
+             });
+
+             nodeElement.addEventListener('drop', (e) => {
+                 e.preventDefault();
+                 e.stopPropagation();
+                 nodeElement.classList.remove('bg-indigo-100', 'dark:bg-slate-700');
+                 
+                 const bookmarkId = e.dataTransfer.getData('text/plain');
+                 if (bookmarkId) {
+                     chrome.bookmarks.move(bookmarkId, { parentId: node.id }, () => {
+                         loadBookmarks();
+                     });
+                 }
+             });
              
              itemWrapper.appendChild(nodeElement);
              
-             if (node.children.some(child => child.children)) {
+             if (hasSubFolders) {
                  const childrenContainer = document.createElement('div');
-                 childrenContainer.className = 'ml-4 pl-1 border-l border-slate-200 dark:border-slate-700 space-y-0.5';
+                 childrenContainer.className = `children-container ml-4 pl-1 border-l border-slate-200 dark:border-slate-700 space-y-0.5 ${isExpanded ? '' : 'hidden'}`;
                  itemWrapper.appendChild(childrenContainer);
                  
                  node.children.forEach(child => renderNode(child, childrenContainer, level + 1));
@@ -216,6 +337,7 @@ function renderBookmarkSites(folder) {
 
     // 初始化原生拖拽
     let draggedItem = null;
+    let dropPosition = 'before'; // 'before' or 'after'
 
     sitesGrid.querySelectorAll('a').forEach(item => {
         item.setAttribute('draggable', true);
@@ -232,55 +354,97 @@ function renderBookmarkSites(folder) {
         item.addEventListener('dragend', function(e) {
             item.classList.remove('opacity-50', 'scale-95');
             draggedItem = null;
-            sitesGrid.querySelectorAll('.border-indigo-500').forEach(el => {
-                el.classList.remove('border-indigo-500', 'border-2', 'border-dashed');
-            });
+            // 清理所有指示器
+            sitesGrid.querySelectorAll('[data-marker]').forEach(el => el.classList.add('hidden'));
         });
 
         item.addEventListener('dragover', function(e) {
             e.preventDefault();
             e.dataTransfer.dropEffect = 'move';
-        });
-        
-        item.addEventListener('dragenter', function(e) {
-            e.preventDefault();
-            if (item !== draggedItem) {
-                item.classList.add('border-indigo-500', 'border-2', 'border-dashed');
+            
+            if (item === draggedItem) return;
+
+            const rect = item.getBoundingClientRect();
+            const midX = rect.left + rect.width / 2;
+            
+            const leftMarker = item.querySelector('[data-marker="left"]');
+            const rightMarker = item.querySelector('[data-marker="right"]');
+
+            if (e.clientX < midX) {
+                dropPosition = 'before';
+                leftMarker.classList.remove('hidden');
+                rightMarker.classList.add('hidden');
+            } else {
+                dropPosition = 'after';
+                leftMarker.classList.add('hidden');
+                rightMarker.classList.remove('hidden');
             }
         });
-
+        
         item.addEventListener('dragleave', function(e) {
-            item.classList.remove('border-indigo-500', 'border-2', 'border-dashed');
+             if (item.contains(e.relatedTarget)) return;
+
+             const leftMarker = item.querySelector('[data-marker="left"]');
+             const rightMarker = item.querySelector('[data-marker="right"]');
+             if (leftMarker) leftMarker.classList.add('hidden');
+             if (rightMarker) rightMarker.classList.add('hidden');
         });
 
         item.addEventListener('drop', function(e) {
             e.preventDefault();
+            const leftMarker = item.querySelector('[data-marker="left"]');
+            const rightMarker = item.querySelector('[data-marker="right"]');
+            if (leftMarker) leftMarker.classList.add('hidden');
+            if (rightMarker) rightMarker.classList.add('hidden');
+
             if (item === draggedItem) return;
             
-            const allItems = Array.from(sitesGrid.children);
-            const draggedIndex = allItems.indexOf(draggedItem);
-            const targetIndex = allItems.indexOf(item);
-            
-            if (draggedIndex < targetIndex) {
-                item.parentNode.insertBefore(draggedItem, item.nextSibling);
-            } else {
+            const sourceId = draggedItem.dataset.id;
+            const targetId = item.dataset.id;
+            const currentDropPosition = dropPosition;
+
+            if (currentDropPosition === 'before') {
                 item.parentNode.insertBefore(draggedItem, item);
+            } else {
+                item.parentNode.insertBefore(draggedItem, item.nextSibling);
             }
             
-            const newPositionInDom = Array.from(sitesGrid.children).indexOf(draggedItem);
-            
-            chrome.bookmarks.move(draggedItem.dataset.id, {
-                parentId: currentFolder.id,
-                index: newPositionInDom
-            }, function() {
-                loadBookmarks();
+            chrome.bookmarks.getChildren(currentFolder.id, function(children) {
+                const sourceIndex = children.findIndex(c => c.id === sourceId);
+                const targetRealIndex = children.findIndex(c => c.id === targetId);
+                let destinationIndex;
+
+                if (currentDropPosition === 'before') {
+                    if (sourceIndex < targetRealIndex) {
+                        destinationIndex = targetRealIndex - 1; 
+                    } else {
+                        destinationIndex = targetRealIndex;
+                    }
+                } else {
+                    if (sourceIndex < targetRealIndex) {
+                        destinationIndex = targetRealIndex;
+                    } else {
+                        destinationIndex = targetRealIndex + 1;
+                    }
+                }
+
+                const moveProperties = { parentId: currentFolder.id };
+                if (destinationIndex !== undefined && destinationIndex >= 0) {
+                    moveProperties.index = destinationIndex;
+                } else if (destinationIndex < 0) {
+                    moveProperties.index = 0;
+                }
+
+                chrome.bookmarks.move(sourceId, moveProperties, function() {
+                    loadBookmarks();
+                });
             });
         });
     });
 }
 
 // 渲染单个站点卡片
-function renderSiteCard(node, container) {
+function renderSiteCard(node, container, showPath = false) {
     let hostname = '';
     try {
         const url = new URL(node.url);
@@ -295,20 +459,48 @@ function renderSiteCard(node, container) {
     card.href = node.url;
     card.target = "_blank";
     card.dataset.id = node.id;
+    // Use pointer-events-none for children to ensure drag events fire on the card container
     card.className = `
         group bg-white rounded-2xl p-5 shadow-[0_2px_8px_rgb(0,0,0,0.04)] 
         hover:shadow-[0_8px_24px_rgb(0,0,0,0.08)] hover:-translate-y-1 
-        transition-all duration-300 flex flex-col relative overflow-hidden h-32
+        transition-all duration-300 flex flex-col relative h-32
         dark:bg-slate-800 dark:shadow-none dark:hover:bg-slate-750 dark:hover:shadow-lg dark:hover:shadow-black/20
-    `;
+    `; // Removed overflow-hidden to allow markers (if positioned outside) or just to be safe. 
+       // Actually, keeping overflow-hidden is better for rounded corners, but we need markers to be visible.
+       // Markers are absolute inside relative card. As long as they are inside the bounds, overflow-hidden is fine.
+       // I will keep overflow-hidden but make markers clearer.
+       
+    card.className += " overflow-hidden";
 
+    if (showPath && node.parentId) {
+        chrome.bookmarks.get(node.parentId, (parents) => {
+            if (parents && parents.length > 0) {
+                const parentTitle = parents[0].title;
+                const badge = document.createElement('span');
+                badge.className = 'absolute bottom-2 right-2 text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded border border-slate-200 dark:bg-slate-700 dark:text-slate-400 dark:border-slate-600 pointer-events-none opacity-80';
+                badge.textContent = parentTitle;
+                card.appendChild(badge);
+            }
+        });
+    }
+
+    // Markers - Increased width and visibility
+    const leftMarker = document.createElement('div');
+    leftMarker.className = 'pointer-events-none absolute top-0 bottom-0 left-0 w-1.5 bg-indigo-600 hidden z-50'; // Removed rounded-r to just be a solid line
+    leftMarker.dataset.marker = 'left';
+    
+    const rightMarker = document.createElement('div');
+    rightMarker.className = 'pointer-events-none absolute top-0 bottom-0 right-0 w-1.5 bg-indigo-600 hidden z-50'; // Removed rounded-l
+    rightMarker.dataset.marker = 'right';
+    
     card.addEventListener('contextmenu', function(e) {
         e.preventDefault();
-        showContextMenu(e.clientX, e.clientY, node.id);
+        showContextMenu(e.clientX, e.clientY, node.id, 'bookmark');
     });
     
+    // Added pointer-events-none to internal elements to prevent drag flicker
     card.innerHTML = `
-        <div class="flex items-start justify-between mb-3">
+        <div class="flex items-start justify-between mb-3 pointer-events-none">
             <div class="w-10 h-10 rounded-xl bg-slate-50 p-0.5 flex items-center justify-center group-hover:scale-105 transition-transform dark:bg-slate-700/50">
                 <img src="${faviconUrl}" class="w-8 h-8 object-contain rounded-lg" alt="icon">
             </div>
@@ -318,11 +510,14 @@ function renderSiteCard(node, container) {
                 </span>
             </div>
         </div>
-        <div class="mt-auto">
+        <div class="mt-auto pointer-events-none">
             <h3 class="font-bold text-slate-700 text-sm mb-0.5 truncate dark:text-slate-200 group-hover:text-indigo-600 transition-colors" title="${node.title}">${node.title}</h3>
             <p class="text-xs text-slate-400 truncate font-mono opacity-80 dark:text-slate-500">${hostname}</p>
         </div>
     `;
+
+    card.appendChild(leftMarker);
+    card.appendChild(rightMarker);
     
     container.appendChild(card);
 }
@@ -356,7 +551,7 @@ function setupSearch() {
             
             results.forEach(node => {
                 if (node.url) {
-                    renderSiteCard(node, sitesGrid);
+                    renderSiteCard(node, sitesGrid, true);
                 }
             });
             sitesContainer.appendChild(sitesGrid);
@@ -367,10 +562,13 @@ function setupSearch() {
 // --- 右键菜单与编辑功能逻辑 ---
 
 let contextMenuTargetId = null;
+let contextMenuTargetType = 'bookmark'; // 'bookmark' or 'folder'
+
 const contextMenu = document.getElementById('context-menu');
 const editModal = document.getElementById('edit-modal');
 const editTitleInput = document.getElementById('edit-title');
 const editUrlInput = document.getElementById('edit-url');
+const editUrlContainer = editUrlInput.parentElement; // Used to hide/show URL input
 
 // 初始化菜单事件
 document.addEventListener('click', (e) => {
@@ -381,13 +579,34 @@ document.addEventListener('click', (e) => {
 // 删除按钮
 document.getElementById('ctx-delete').addEventListener('click', () => {
     if (contextMenuTargetId) {
-        if (confirm('确定要删除这个书签吗？')) {
-            chrome.bookmarks.remove(contextMenuTargetId, () => {
+        const isFolder = contextMenuTargetType === 'folder';
+        const msg = isFolder ? '确定要删除这个文件夹及其所有内容吗？此操作不可恢复！' : '确定要删除这个书签吗？';
+        
+        if (confirm(msg)) {
+            const removeFunc = isFolder ? chrome.bookmarks.removeTree : chrome.bookmarks.remove;
+            removeFunc(contextMenuTargetId, () => {
                 // 删除成功后刷新视图
-                const cardToRemove = document.querySelector(`a[data-id="${contextMenuTargetId}"]`);
-                if (cardToRemove) {
-                    cardToRemove.remove();
+                if (isFolder) {
+                    loadBookmarks(); // 文件夹变动需刷新树
+                } else {
+                    const cardToRemove = document.querySelector(`a[data-id="${contextMenuTargetId}"]`);
+                    if (cardToRemove) cardToRemove.remove();
                 }
+            });
+        }
+    }
+});
+
+// 新建文件夹按钮
+document.getElementById('ctx-new-folder').addEventListener('click', () => {
+    if (contextMenuTargetId && contextMenuTargetType === 'folder') {
+        const name = prompt("请输入新文件夹名称:", "新建文件夹");
+        if (name) {
+            chrome.bookmarks.create({
+                parentId: contextMenuTargetId,
+                title: name
+            }, () => {
+                loadBookmarks();
             });
         }
     }
@@ -400,7 +619,16 @@ document.getElementById('ctx-edit').addEventListener('click', () => {
             if (results && results.length > 0) {
                 const bookmark = results[0];
                 editTitleInput.value = bookmark.title;
-                editUrlInput.value = bookmark.url;
+                
+                if (contextMenuTargetType === 'folder') {
+                    editUrlContainer.classList.add('hidden');
+                    editUrlInput.removeAttribute('required');
+                } else {
+                    editUrlContainer.classList.remove('hidden');
+                    editUrlInput.value = bookmark.url;
+                    editUrlInput.setAttribute('required', 'true');
+                }
+                
                 editModal.classList.remove('hidden');
                 // 聚焦输入框
                 setTimeout(() => editTitleInput.focus(), 100);
@@ -416,44 +644,62 @@ document.getElementById('btn-cancel').addEventListener('click', () => {
 
 // 模态框：保存
 document.getElementById('btn-save').addEventListener('click', () => {
-    if (contextMenuTargetId && editTitleInput.value && editUrlInput.value) {
-        chrome.bookmarks.update(contextMenuTargetId, {
-            title: editTitleInput.value,
-            url: editUrlInput.value
-        }, (updatedNode) => {
+    if (contextMenuTargetId && editTitleInput.value) {
+        const updates = { title: editTitleInput.value };
+        
+        if (contextMenuTargetType === 'bookmark') {
+            if (!editUrlInput.value) return; // URL required for bookmarks
+            updates.url = editUrlInput.value;
+        }
+
+        chrome.bookmarks.update(contextMenuTargetId, updates, (updatedNode) => {
             editModal.classList.add('hidden');
-            // 更新 UI
-            const card = document.querySelector(`a[data-id="${contextMenuTargetId}"]`);
-            if (card) {
-                card.querySelector('h3').textContent = updatedNode.title;
-                card.querySelector('h3').title = updatedNode.title;
-                
-                let newHostname = '';
-                try {
-                    newHostname = new URL(updatedNode.url).hostname.replace(/^www\./, '');
-                } catch (e) { newHostname = updatedNode.url; }
-                card.querySelector('p').textContent = newHostname;
-                
-                const newIconUrl = getFaviconUrl(updatedNode.url);
-                card.querySelector('img').src = newIconUrl;
-                
-                card.href = updatedNode.url;
+            
+            if (contextMenuTargetType === 'folder') {
+                loadBookmarks(); // 文件夹改名刷新树
+            } else {
+                // 更新 UI
+                const card = document.querySelector(`a[data-id="${contextMenuTargetId}"]`);
+                if (card) {
+                    card.querySelector('h3').textContent = updatedNode.title;
+                    card.querySelector('h3').title = updatedNode.title;
+                    
+                    let newHostname = '';
+                    try {
+                        newHostname = new URL(updatedNode.url).hostname.replace(/^www\./, '');
+                    } catch (e) { newHostname = updatedNode.url; }
+                    card.querySelector('p').textContent = newHostname;
+                    
+                    const newIconUrl = getFaviconUrl(updatedNode.url);
+                    card.querySelector('img').src = newIconUrl;
+                    
+                    card.href = updatedNode.url;
+                }
             }
         });
     }
 });
 
 // 显示菜单函数
-function showContextMenu(x, y, id) {
+function showContextMenu(x, y, id, type = 'bookmark') {
     contextMenuTargetId = id;
+    contextMenuTargetType = type;
     
     const w = window.innerWidth;
     const h = window.innerHeight;
     const mw = 144;
-    const mh = 80;
+    const mh = 80; // approximate
     
     if (x + mw > w) x = x - mw;
     if (y + mh > h) y = y - mh;
+
+    // Toggle buttons based on type
+    const newFolderBtn = document.getElementById('ctx-new-folder');
+    if (type === 'folder') {
+        newFolderBtn.classList.remove('hidden');
+    } else {
+        newFolderBtn.classList.add('hidden');
+    }
 
     contextMenu.style.left = `${x}px`;
     contextMenu.style.top = `${y}px`;
