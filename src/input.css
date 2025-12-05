@@ -2,10 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  a {
-    text-decoration: inherit;
-    color: inherit;
+@layer utilities {
+  .mask-image-linear-fade {
+    mask-image: linear-gradient(to right, black 90%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, black 90%, transparent 100%);
   }
 }
 
