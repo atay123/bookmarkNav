@@ -3,11 +3,39 @@ let allBookmarks = [];
 let currentFolder = null;
 let expandedFolders = new Set(); // Store IDs of expanded folders
 
+// 立即执行主题检查，防止页面闪烁
+if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    document.documentElement.classList.add('dark');
+} else {
+    document.documentElement.classList.remove('dark');
+}
+
 // 初始化函数
 document.addEventListener('DOMContentLoaded', function () {
     loadBookmarks();
     setupSearch();
+    setupTheme();
 });
+
+// --- 主题切换逻辑 ---
+function setupTheme() {
+    const themeToggleBtn = document.getElementById('theme-toggle');
+    
+    if (themeToggleBtn) {
+        themeToggleBtn.addEventListener('click', function() {
+            // toggle icons inside button? 
+            // Tailwind 'dark:' classes on svg handles visibility, we just need to toggle 'dark' class on html
+            
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('color-theme', 'light');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('color-theme', 'dark');
+            }
+        });
+    }
+}
 
 // 获取 Chrome 内部 Favicon URL
 function getFaviconUrl(pageUrl) {
