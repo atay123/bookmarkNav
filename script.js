@@ -319,11 +319,18 @@ function renderBookmarkSites(folder) {
             <div class="flex flex-col items-center justify-center h-96 text-slate-400">
                 <svg class="w-16 h-16 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
                 <p class="mb-4">此文件夹为空</p>
-                <button class="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors text-sm font-medium dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-900/50" onclick="alert('请使用浏览器快捷键 Ctrl+D (Cmd+D) 添加书签')">
+                <button id="btn-empty-help" class="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors text-sm font-medium dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-900/50">
                     如何添加书签?
                 </button>
             </div>
         `;
+        // Bind event listener safely (CSP compliant)
+        const helpBtn = sitesContainer.querySelector('#btn-empty-help');
+        if (helpBtn) {
+            helpBtn.addEventListener('click', () => {
+                alert('请使用浏览器快捷键 Ctrl+D (Cmd+D) 添加书签');
+            });
+        }
         return;
     }
 
