@@ -50,13 +50,6 @@ function findFirstFolder(node) {
 function updateBreadcrumbs(folder) {
     const breadcrumbsContainer = document.getElementById('breadcrumbs');
     if (!breadcrumbsContainer) return;
-
-    // 从当前节点向上查找路径
-    // 由于 chrome.bookmarks.getTree 返回的是整个树，节点包含 children，
-    // 但通常节点对象里不一定包含 parentId (getTree 返回的对象包含，但为了稳健，我们可能需要回溯)
-    // Chrome BookmarkNode 对象包含 parentId。
-    // 我们可以通过 recursive 查找或者利用 parentId 逐级向上查询 chrome.bookmarks.get
-    // 为了性能，我们在 renderBookmarkSites 时已经拿到了 folder 对象。
     
     const path = [];
     
@@ -91,8 +84,6 @@ function renderBreadcrumbs(path) {
         首页
     `;
     homeLink.onclick = () => {
-         // 重新加载树的根目录或者默认文件夹
-         // 这里简单处理：找到第一个文件夹
          if (allBookmarks && allBookmarks.length > 0) {
              const defaultFolder = findFirstFolder(allBookmarks[0]);
              if (defaultFolder) renderBookmarkSites(defaultFolder);
@@ -101,20 +92,17 @@ function renderBreadcrumbs(path) {
     breadcrumbsContainer.appendChild(homeLink);
 
     path.forEach((node, index) => {
-        // 分隔符
         const separator = document.createElement('span');
         separator.className = 'mx-1 text-slate-300 dark:text-slate-600';
         separator.textContent = '/';
         breadcrumbsContainer.appendChild(separator);
 
         const item = document.createElement('span');
-        // 最后一项是当前页，不高亮可点
         if (index === path.length - 1) {
             item.className = 'font-semibold text-slate-800 dark:text-slate-200';
         } else {
             item.className = 'cursor-pointer hover:text-indigo-600 transition-colors';
             item.onclick = () => {
-                // 获取完整节点信息以渲染
                 chrome.bookmarks.getSubTree(node.id, (results) => {
                      if (results && results.length > 0) {
                          renderBookmarkSites(results[0]);
@@ -128,14 +116,12 @@ function renderBreadcrumbs(path) {
 }
 
 
-// 渲染左侧书签目录树 (重构版：支持层级线)
+// 渲染左侧书签目录树
 function renderBookmarkTree(bookmark) {
     const treeContainer = document.getElementById('bookmark-tree');
     treeContainer.innerHTML = '';
     
     function renderNode(node, container, level = 0) {
-        // 跳过根节点 (ID 0) 及其直接子节点（书签栏、其他书签等），如果想把它们作为根展示也可以。
-        // 通常根节点 title 为空。
         if (level === 0 && !node.title) {
              if (node.children) {
                 node.children.forEach(child => renderNode(child, container, level + 1));
@@ -143,14 +129,10 @@ function renderBookmarkTree(bookmark) {
             return;
         }
 
-        // 仅渲染文件夹
-        if (node.children) { // 这是一个文件夹
-             // 创建文件夹条目
+        if (node.children) {
              const itemWrapper = document.createElement('div');
              
              const nodeElement = document.createElement('div');
-             // Tailwind 样式优化：不再使用 bg 选中，改为 border-l-4
-             // 默认样式
              nodeElement.className = `
                 flex items-center px-3 py-2 cursor-pointer transition-all duration-200
                 hover:bg-slate-100 group mb-0.5 text-sm font-medium text-slate-600
@@ -159,9 +141,8 @@ function renderBookmarkTree(bookmark) {
                 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200
              `;
              nodeElement.dataset.id = node.id;
-             // 不再使用 paddingLeft 来缩进，而是依靠容器嵌套
              
-             const hasSubFolders = node.children.some(child => child.children); // 检查是否有子文件夹
+             const hasSubFolders = node.children.some(child => child.children);
              
              nodeElement.innerHTML = `
                 <span class="mr-2 text-slate-400 group-hover:text-indigo-500 transition-colors dark:text-slate-500 dark:group-hover:text-indigo-400">
@@ -172,14 +153,12 @@ function renderBookmarkTree(bookmark) {
              
              nodeElement.addEventListener('click', function(e) {
                  e.stopPropagation();
-                 // 获取完整的子树信息以确保 renderBookmarkSites 能拿到 children
                  chrome.bookmarks.getSubTree(node.id, (results) => {
                     if (results && results.length > 0) {
                         renderBookmarkSites(results[0]);
                     }
                  });
 
-                 // 高亮状态处理 (Left Border Style)
                  document.querySelectorAll('.bookmark-folder-item').forEach(el => {
                      el.classList.remove('border-indigo-500', 'bg-indigo-50', 'text-indigo-700', 'dark:border-indigo-500', 'dark:bg-indigo-900/20', 'dark:text-indigo-300');
                      el.classList.add('border-transparent', 'text-slate-600', 'hover:bg-slate-100', 'dark:text-slate-400', 'dark:hover:bg-slate-800');
@@ -191,12 +170,8 @@ function renderBookmarkTree(bookmark) {
              
              itemWrapper.appendChild(nodeElement);
              
-             // 如果有子文件夹，创建嵌套容器 (Tree Guides)
-             // 只有当存在子节点且包含文件夹时才渲染容器，或者只要是文件夹就渲染容器以备后用？
-             // 现在的逻辑是只递归渲染文件夹。
              if (node.children.some(child => child.children)) {
                  const childrenContainer = document.createElement('div');
-                 // 添加左侧引导线：ml-4 pl-2 border-l
                  childrenContainer.className = 'ml-4 pl-1 border-l border-slate-200 dark:border-slate-700 space-y-0.5';
                  itemWrapper.appendChild(childrenContainer);
                  
@@ -216,14 +191,9 @@ function renderBookmarkSites(folder) {
     sitesContainer.innerHTML = '';
     currentFolder = folder;
     
-    // 更新头部标题 (不再需要，已移除，现在用面包屑)
-    // document.getElementById('current-folder-title').textContent = folder.title || '全部书签';
-    
-    // 更新面包屑
     updateBreadcrumbs(folder);
 
     const sites = folder.children ? folder.children.filter(node => !node.children) : [];
-    // document.getElementById('folder-count').textContent = `${sites.length} 个书签`;
 
     if (sites.length === 0) {
         sitesContainer.innerHTML = `
@@ -309,12 +279,12 @@ function renderBookmarkSites(folder) {
     });
 }
 
-// 渲染单个站点卡片 (UI优化版：去边框，软阴影，简化URL)
+// 渲染单个站点卡片
 function renderSiteCard(node, container) {
     let hostname = '';
     try {
         const url = new URL(node.url);
-        hostname = url.hostname.replace(/^www\./, ''); // 去掉 www.
+        hostname = url.hostname.replace(/^www\./, '');
     } catch (e) {
         hostname = node.url;
     }
@@ -325,7 +295,6 @@ function renderSiteCard(node, container) {
     card.href = node.url;
     card.target = "_blank";
     card.dataset.id = node.id;
-    // 优化：移除 border-slate-100，改为更柔和的 shadow
     card.className = `
         group bg-white rounded-2xl p-5 shadow-[0_2px_8px_rgb(0,0,0,0.04)] 
         hover:shadow-[0_8px_24px_rgb(0,0,0,0.08)] hover:-translate-y-1 
@@ -358,7 +327,7 @@ function renderSiteCard(node, container) {
     container.appendChild(card);
 }
 
-// 简单的搜索功能 (保持不变，但 UI 容器 id 已在 HTML 中保持一致)
+// 简单的搜索功能
 function setupSearch() {
     const searchInput = document.getElementById('search-input');
     searchInput.addEventListener('input', (e) => {
@@ -372,7 +341,6 @@ function setupSearch() {
             const sitesContainer = document.getElementById('bookmark-sites');
             sitesContainer.innerHTML = '';
             
-            // 在搜索模式下，面包屑显示搜索状态
             const breadcrumbsContainer = document.getElementById('breadcrumbs');
             if(breadcrumbsContainer) {
                 breadcrumbsContainer.innerHTML = `<span class="text-slate-500 dark:text-slate-400">搜索结果: "${query}" (${results.length})</span>`;
@@ -396,16 +364,114 @@ function setupSearch() {
     });
 }
 
-// --- 右键菜单与编辑功能逻辑 (保持不变) ---
+// --- 右键菜单与编辑功能逻辑 ---
 
 let contextMenuTargetId = null;
-// ... (Rest of the file is mostly event listeners, keeping them as they were logic-wise is fine)
-// ... I will just copy the rest of the file content from the previous read to ensure nothing is lost.
+const contextMenu = document.getElementById('context-menu');
+const editModal = document.getElementById('edit-modal');
+const editTitleInput = document.getElementById('edit-title');
+const editUrlInput = document.getElementById('edit-url');
 
-// ... (Since I am overwriting the file, I must include the rest of the logic)
-// Re-pasting the context menu logic below:
+// 初始化菜单事件
+document.addEventListener('click', (e) => {
+    // 点击任何地方关闭菜单
+    hideContextMenu();
+});
 
-// const contextMenu ... (Already declared above? No, I need to make sure I don't duplicate or lose vars)
-// Let's just continue the file content in the write_file block.
+// 删除按钮
+document.getElementById('ctx-delete').addEventListener('click', () => {
+    if (contextMenuTargetId) {
+        if (confirm('确定要删除这个书签吗？')) {
+            chrome.bookmarks.remove(contextMenuTargetId, () => {
+                // 删除成功后刷新视图
+                const cardToRemove = document.querySelector(`a[data-id="${contextMenuTargetId}"]`);
+                if (cardToRemove) {
+                    cardToRemove.remove();
+                }
+            });
+        }
+    }
+});
 
-// ... End of provided code in write_file
+// 编辑按钮
+document.getElementById('ctx-edit').addEventListener('click', () => {
+    if (contextMenuTargetId) {
+        chrome.bookmarks.get(contextMenuTargetId, (results) => {
+            if (results && results.length > 0) {
+                const bookmark = results[0];
+                editTitleInput.value = bookmark.title;
+                editUrlInput.value = bookmark.url;
+                editModal.classList.remove('hidden');
+                // 聚焦输入框
+                setTimeout(() => editTitleInput.focus(), 100);
+            }
+        });
+    }
+});
+
+// 模态框：取消
+document.getElementById('btn-cancel').addEventListener('click', () => {
+    editModal.classList.add('hidden');
+});
+
+// 模态框：保存
+document.getElementById('btn-save').addEventListener('click', () => {
+    if (contextMenuTargetId && editTitleInput.value && editUrlInput.value) {
+        chrome.bookmarks.update(contextMenuTargetId, {
+            title: editTitleInput.value,
+            url: editUrlInput.value
+        }, (updatedNode) => {
+            editModal.classList.add('hidden');
+            // 更新 UI
+            const card = document.querySelector(`a[data-id="${contextMenuTargetId}"]`);
+            if (card) {
+                card.querySelector('h3').textContent = updatedNode.title;
+                card.querySelector('h3').title = updatedNode.title;
+                
+                let newHostname = '';
+                try {
+                    newHostname = new URL(updatedNode.url).hostname.replace(/^www\./, '');
+                } catch (e) { newHostname = updatedNode.url; }
+                card.querySelector('p').textContent = newHostname;
+                
+                const newIconUrl = getFaviconUrl(updatedNode.url);
+                card.querySelector('img').src = newIconUrl;
+                
+                card.href = updatedNode.url;
+            }
+        });
+    }
+});
+
+// 显示菜单函数
+function showContextMenu(x, y, id) {
+    contextMenuTargetId = id;
+    
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    const mw = 144;
+    const mh = 80;
+    
+    if (x + mw > w) x = x - mw;
+    if (y + mh > h) y = y - mh;
+
+    contextMenu.style.left = `${x}px`;
+    contextMenu.style.top = `${y}px`;
+    contextMenu.classList.remove('hidden');
+    
+    requestAnimationFrame(() => {
+        contextMenu.classList.remove('opacity-0', 'scale-95');
+        contextMenu.classList.add('opacity-100', 'scale-100');
+    });
+}
+
+// 隐藏菜单函数
+function hideContextMenu() {
+    if (contextMenu && !contextMenu.classList.contains('hidden')) {
+        contextMenu.classList.add('opacity-0', 'scale-95');
+        contextMenu.classList.remove('opacity-100', 'scale-100');
+        setTimeout(() => {
+            contextMenu.classList.add('hidden');
+        }, 100);
+    }
+}
