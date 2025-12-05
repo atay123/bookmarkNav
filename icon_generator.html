@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Icon Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4f46e5', // Indigo 600
+                        secondary: '#64748b', // Slate 500
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-100 flex flex-col items-center justify-center min-h-screen gap-8">
+
+    <div class="text-center space-y-2">
+        <h1 class="text-2xl font-bold text-slate-700">新图标预览</h1>
+        <p class="text-slate-500">右键点击图片 -> "图片另存为" -> 保存为 <code class="bg-slate-200 px-1 rounded">icon.png</code></p>
+    </div>
+
+    <!-- Canvas 容器 -->
+    <div class="relative group">
+        <canvas id="appIcon" width="512" height="512" class="shadow-2xl rounded-[3rem] cursor-pointer hover:scale-105 transition-transform duration-300"></canvas>
+        <div class="absolute -bottom-8 left-0 right-0 text-center text-sm text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity">
+            512x512 px
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('appIcon');
+        const ctx = canvas.getContext('2d');
+        const size = 512;
+        const center = size / 2;
+
+        // 1. 绘制背景 (圆角矩形 + 靛蓝渐变)
+        const gradient = ctx.createLinearGradient(0, 0, size, size);
+        gradient.addColorStop(0, '#6366f1'); // Indigo 500
+        gradient.addColorStop(1, '#4338ca'); // Indigo 700
+
+        ctx.fillStyle = gradient;
+        
+        // 绘制圆角矩形路径
+        const radius = 110; // 圆角大小
+        ctx.beginPath();
+        ctx.moveTo(radius, 0);
+        ctx.lineTo(size - radius, 0);
+        ctx.quadraticCurveTo(size, 0, size, radius);
+        ctx.lineTo(size, size - radius);
+        ctx.quadraticCurveTo(size, size, size - radius, size);
+        ctx.lineTo(radius, size);
+        ctx.quadraticCurveTo(0, size, 0, size - radius);
+        ctx.lineTo(0, radius);
+        ctx.quadraticCurveTo(0, 0, radius, 0);
+        ctx.closePath();
+        ctx.fill();
+
+        // 2. 绘制微弱的网格纹理 (呼应卡片网格布局)
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.lineWidth = 2;
+        const gridSize = 128;
+        
+        ctx.beginPath();
+        // 竖线
+        for (let x = gridSize; x < size; x += gridSize) {
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, size);
+        }
+        // 横线
+        for (let y = gridSize; y < size; y += gridSize) {
+            ctx.moveTo(0, y);
+            ctx.lineTo(size, y);
+        }
+        ctx.stroke();
+
+        // 3. 绘制核心图形：书签 + 导航指针
+        
+        // 阴影
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
+        ctx.shadowBlur = 20;
+        ctx.shadowOffsetY = 10;
+
+        // 白色书签形状
+        ctx.fillStyle = '#ffffff';
+        
+        const bmWidth = 200;
+        const bmHeight = 280;
+        const bmX = center - bmWidth / 2;
+        const bmY = (size - bmHeight) / 2 - 20;
+
+        ctx.beginPath();
+        ctx.moveTo(bmX, bmY); // 左上
+        ctx.lineTo(bmX + bmWidth, bmY); // 右上
+        ctx.lineTo(bmX + bmWidth, bmY + bmHeight); // 右下
+        ctx.lineTo(center, bmY + bmHeight - 60); // 底部缺口中心
+        ctx.lineTo(bmX, bmY + bmHeight); // 左下
+        ctx.closePath();
+        ctx.fill();
+
+        // 4. 绘制强调色装饰 (Indidgo Accent)
+        ctx.shadowColor = 'transparent'; //以此重置阴影
+        ctx.fillStyle = '#4f46e5'; // Indigo 600
+        
+        // 在书签中间画一个类似“搜索/罗盘”的圆环
+        const ringY = bmY + 100;
+        const ringRadius = 50;
+        
+        ctx.beginPath();
+        ctx.arc(center, ringY, ringRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 内部白色圆点
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(center, ringY, 20, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 5. 顶部的高光 (Glass effect)
+        const highlight = ctx.createLinearGradient(0, 0, 0, size/2);
+        highlight.addColorStop(0, 'rgba(255, 255, 255, 0.2)');
+        highlight.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        
+        ctx.fillStyle = highlight;
+        ctx.beginPath();
+        ctx.moveTo(radius, 0);
+        ctx.lineTo(size - radius, 0);
+        ctx.quadraticCurveTo(size, 0, size, radius);
+        ctx.lineTo(size, size/2);
+        ctx.quadraticCurveTo(size/2, size/3, 0, size/2); // 曲线边缘
+        ctx.lineTo(0, radius);
+        ctx.quadraticCurveTo(0, 0, radius, 0);
+        ctx.closePath();
+        ctx.fill();
+
+    </script>
+</body>
+</html>

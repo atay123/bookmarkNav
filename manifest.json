@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "书签导航网站",
   "version": "1.0",
-  "description": "将浏览器书签以导航网站形式展现，替代默认新标签页",
+  "description": "将浏览器书签以导航网站形式同步展现，替代默认新标签页",
   "permissions": [
     "bookmarks",
     "favicon"
