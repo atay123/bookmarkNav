@@ -260,26 +260,24 @@ function renderBookmarkTree(bookmark) {
              nodeElement.addEventListener('dragover', (e) => {
                  e.preventDefault(); 
                  e.stopPropagation();
-                 // Add highlight
-                 nodeElement.classList.add('bg-indigo-100', 'dark:bg-slate-700');
+                 // 使用 ring-inset 模拟内边框，避免布局抖动，视觉反馈更强
+                 nodeElement.classList.add('ring-2', 'ring-inset', 'ring-indigo-500', 'bg-indigo-50', 'dark:ring-indigo-400', 'dark:bg-indigo-900/20');
              });
 
              nodeElement.addEventListener('dragleave', (e) => {
                  e.preventDefault();
                  e.stopPropagation();
                  
-                 // Use relatedTarget to avoid flickering when entering children
-                 // However, since we added pointer-events-none to children, this might not be strictly necessary
-                 // but it's good practice.
+                 // 避免子元素触发导致闪烁
                  if (nodeElement.contains(e.relatedTarget)) return;
 
-                 nodeElement.classList.remove('bg-indigo-100', 'dark:bg-slate-700');
+                 nodeElement.classList.remove('ring-2', 'ring-inset', 'ring-indigo-500', 'bg-indigo-50', 'dark:ring-indigo-400', 'dark:bg-indigo-900/20');
              });
 
              nodeElement.addEventListener('drop', (e) => {
                  e.preventDefault();
                  e.stopPropagation();
-                 nodeElement.classList.remove('bg-indigo-100', 'dark:bg-slate-700');
+                 nodeElement.classList.remove('ring-2', 'ring-inset', 'ring-indigo-500', 'bg-indigo-50', 'dark:ring-indigo-400', 'dark:bg-indigo-900/20');
                  
                  const bookmarkId = e.dataTransfer.getData('text/plain');
                  if (bookmarkId) {
@@ -337,7 +335,6 @@ function renderBookmarkSites(folder) {
 
     // 初始化原生拖拽
     let draggedItem = null;
-    let dropPosition = 'before'; // 'before' or 'after'
 
     sitesGrid.querySelectorAll('a').forEach(item => {
         item.setAttribute('draggable', true);
@@ -346,98 +343,81 @@ function renderBookmarkSites(folder) {
             draggedItem = item;
             e.dataTransfer.effectAllowed = 'move';
             e.dataTransfer.setData('text/plain', item.dataset.id);
-            setTimeout(() => {
-                item.classList.add('opacity-50', 'scale-95');
-            }, 0);
+            // 延迟添加样式，避免拖拽时的 ghost image 也变半透明
+            requestAnimationFrame(() => {
+                item.classList.add('opacity-50', 'scale-95', 'ring-2', 'ring-indigo-200');
+            });
         });
 
         item.addEventListener('dragend', function(e) {
-            item.classList.remove('opacity-50', 'scale-95');
+            item.classList.remove('opacity-50', 'scale-95', 'ring-2', 'ring-indigo-200');
             draggedItem = null;
-            // 清理所有指示器
-            sitesGrid.querySelectorAll('[data-marker]').forEach(el => el.classList.add('hidden'));
+            // 清除所有卡片的指示样式
+            sitesGrid.querySelectorAll('a').forEach(el => {
+                el.style.boxShadow = 'none';
+                el.style.transform = ''; // 清除可能的位移
+            });
         });
 
         item.addEventListener('dragover', function(e) {
-            e.preventDefault();
+            e.preventDefault(); // 允许 drop
             e.dataTransfer.dropEffect = 'move';
             
             if (item === draggedItem) return;
 
+            // 核心逻辑：计算鼠标在卡片的左侧还是右侧
             const rect = item.getBoundingClientRect();
             const midX = rect.left + rect.width / 2;
             
-            const leftMarker = item.querySelector('[data-marker="left"]');
-            const rightMarker = item.querySelector('[data-marker="right"]');
+            // 清除旧样式
+            item.style.boxShadow = 'none';
 
             if (e.clientX < midX) {
-                dropPosition = 'before';
-                leftMarker.classList.remove('hidden');
-                rightMarker.classList.add('hidden');
+                // 鼠标在左侧 -> 插入到前面
+                item.style.boxShadow = '-4px 0 0 0 #6366f1'; // indigo-500 border-l
+                item.dataset.insertPos = 'before';
             } else {
-                dropPosition = 'after';
-                leftMarker.classList.add('hidden');
-                rightMarker.classList.remove('hidden');
+                // 鼠标在右侧 -> 插入到后面
+                item.style.boxShadow = '4px 0 0 0 #6366f1'; // indigo-500 border-r
+                item.dataset.insertPos = 'after';
             }
         });
-        
-        item.addEventListener('dragleave', function(e) {
-             if (item.contains(e.relatedTarget)) return;
 
-             const leftMarker = item.querySelector('[data-marker="left"]');
-             const rightMarker = item.querySelector('[data-marker="right"]');
-             if (leftMarker) leftMarker.classList.add('hidden');
-             if (rightMarker) rightMarker.classList.add('hidden');
+        item.addEventListener('dragleave', function(e) {
+            // 只有当真正离开元素时才移除（避免子元素触发）
+            // 注意：由于我们给子元素加了 pointer-events: none，这里的 relatedTarget 检查可能变得更简单
+            // 但为了保险起见，还是保留检查。
+            if (e.relatedTarget && !item.contains(e.relatedTarget)) {
+                item.style.boxShadow = 'none';
+            }
         });
 
         item.addEventListener('drop', function(e) {
             e.preventDefault();
-            const leftMarker = item.querySelector('[data-marker="left"]');
-            const rightMarker = item.querySelector('[data-marker="right"]');
-            if (leftMarker) leftMarker.classList.add('hidden');
-            if (rightMarker) rightMarker.classList.add('hidden');
-
-            if (item === draggedItem) return;
+            item.style.boxShadow = 'none'; // 清除样式
             
-            const sourceId = draggedItem.dataset.id;
-            const targetId = item.dataset.id;
-            const currentDropPosition = dropPosition;
+            if (item === draggedItem) return;
 
-            if (currentDropPosition === 'before') {
+            const insertPos = item.dataset.insertPos; // 'before' or 'after'
+            
+            // DOM 操作：移动元素
+            if (insertPos === 'before') {
                 item.parentNode.insertBefore(draggedItem, item);
             } else {
                 item.parentNode.insertBefore(draggedItem, item.nextSibling);
             }
+
+            // 计算新索引并调用 Chrome API
+            // 注意：这里需要获取移动后在父容器中的实际 index
+            // Array.from(item.parentNode.children) 包含了所有的卡片，顺序即为当前 DOM 顺序
+            const newIndex = Array.from(item.parentNode.children).indexOf(draggedItem);
             
-            chrome.bookmarks.getChildren(currentFolder.id, function(children) {
-                const sourceIndex = children.findIndex(c => c.id === sourceId);
-                const targetRealIndex = children.findIndex(c => c.id === targetId);
-                let destinationIndex;
-
-                if (currentDropPosition === 'before') {
-                    if (sourceIndex < targetRealIndex) {
-                        destinationIndex = targetRealIndex - 1; 
-                    } else {
-                        destinationIndex = targetRealIndex;
-                    }
-                } else {
-                    if (sourceIndex < targetRealIndex) {
-                        destinationIndex = targetRealIndex;
-                    } else {
-                        destinationIndex = targetRealIndex + 1;
-                    }
-                }
-
-                const moveProperties = { parentId: currentFolder.id };
-                if (destinationIndex !== undefined && destinationIndex >= 0) {
-                    moveProperties.index = destinationIndex;
-                } else if (destinationIndex < 0) {
-                    moveProperties.index = 0;
-                }
-
-                chrome.bookmarks.move(sourceId, moveProperties, function() {
-                    loadBookmarks();
-                });
+            chrome.bookmarks.move(draggedItem.dataset.id, {
+                parentId: currentFolder.id,
+                index: newIndex
+            }, function() {
+                // 可选：如果不重载，需要手动更新 allBookmarks 数据以保持同步
+                // loadBookmarks(); 
             });
         });
     });
@@ -484,15 +464,8 @@ function renderSiteCard(node, container, showPath = false) {
         });
     }
 
-    // Markers - Increased width and visibility
-    const leftMarker = document.createElement('div');
-    leftMarker.className = 'pointer-events-none absolute top-0 bottom-0 left-0 w-1.5 bg-indigo-600 hidden z-50'; // Removed rounded-r to just be a solid line
-    leftMarker.dataset.marker = 'left';
-    
-    const rightMarker = document.createElement('div');
-    rightMarker.className = 'pointer-events-none absolute top-0 bottom-0 right-0 w-1.5 bg-indigo-600 hidden z-50'; // Removed rounded-l
-    rightMarker.dataset.marker = 'right';
-    
+    // Re-append markers after innerHTML is set
+
     card.addEventListener('contextmenu', function(e) {
         e.preventDefault();
         showContextMenu(e.clientX, e.clientY, node.id, 'bookmark');
@@ -515,9 +488,6 @@ function renderSiteCard(node, container, showPath = false) {
             <p class="text-xs text-slate-400 truncate font-mono opacity-80 dark:text-slate-500">${hostname}</p>
         </div>
     `;
-
-    card.appendChild(leftMarker);
-    card.appendChild(rightMarker);
     
     container.appendChild(card);
 }
