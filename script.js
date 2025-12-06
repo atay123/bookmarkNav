@@ -2,6 +2,7 @@
 let allBookmarks = [];
 let currentFolder = null;
 let expandedFolders = new Set(); // Store IDs of expanded folders
+let draggedFolderNode = null; // Store the currently dragged folder node
 
 // --- 主题切换逻辑 ---
 let currentThemePreference = localStorage.getItem('color-theme') || 'system'; // Default to system
@@ -205,6 +206,16 @@ function renderBookmarkTree(bookmark) {
         localStorage.setItem('expandedFolders', JSON.stringify([...expandedFolders]));
     }
 
+    // 辅助函数：检查是否为后代节点（防止拖拽死循环）
+    function isDescendant(parent, childId) {
+        if (!parent.children) return false;
+        for (let child of parent.children) {
+            if (child.id === childId) return true;
+            if (isDescendant(child, childId)) return true;
+        }
+        return false;
+    }
+
     function renderNode(node, container, level = 0) {
         if (level === 0 && !node.title) {
             if (node.children) {
@@ -226,6 +237,11 @@ function renderBookmarkTree(bookmark) {
                 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200
              `;
             nodeElement.dataset.id = node.id;
+            
+            // 启用文件夹拖拽 (根目录的直接子级通常是系统文件夹，最好不要动，但这里先开放)
+            if (node.parentId !== '0') {
+                nodeElement.draggable = true;
+            }
 
             // Check for sub-folders (only folders can be expanded)
             const hasSubFolders = node.children.some(child => child.children);
@@ -315,13 +331,74 @@ function renderBookmarkTree(bookmark) {
                 e.stopPropagation();
                 showContextMenu(e.clientX, e.clientY, node.id, 'folder');
             });
+            
+            // --- 文件夹拖拽事件 (Drag Start/End) ---
+            nodeElement.addEventListener('dragstart', (e) => {
+                draggedFolderNode = node;
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', node.id); // Required for FF
+                
+                // 视觉反馈
+                requestAnimationFrame(() => {
+                    nodeElement.classList.add('opacity-50', 'scale-[0.98]');
+                });
+            });
 
-            // --- 拖拽至文件夹逻辑 ---
+            nodeElement.addEventListener('dragend', (e) => {
+                draggedFolderNode = null;
+                nodeElement.classList.remove('opacity-50', 'scale-[0.98]');
+                // 清理可能的残留样式
+                document.querySelectorAll('.bookmark-folder-item').forEach(el => {
+                    el.classList.remove('ring-2', 'ring-inset', 'ring-indigo-500', 'bg-indigo-50', 'dark:ring-indigo-400', 'dark:bg-indigo-900/20');
+                    el.style.boxShadow = 'none';
+                    delete el.dataset.dropAction;
+                });
+            });
+
+            // --- 拖拽目标 (Drag Over / Drop) ---
             nodeElement.addEventListener('dragover', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                // 使用 ring-inset 模拟内边框，避免布局抖动，视觉反馈更强
-                nodeElement.classList.add('ring-2', 'ring-inset', 'ring-indigo-500', 'bg-indigo-50', 'dark:ring-indigo-400', 'dark:bg-indigo-900/20');
+                e.dataTransfer.dropEffect = 'move';
+
+                // 1. 如果是拖拽书签 (保持原有逻辑)
+                if (!draggedFolderNode) {
+                    nodeElement.classList.add('ring-2', 'ring-inset', 'ring-indigo-500', 'bg-indigo-50', 'dark:ring-indigo-400', 'dark:bg-indigo-900/20');
+                    nodeElement.dataset.dropAction = 'inside';
+                    return;
+                }
+
+                // 2. 如果是拖拽文件夹
+                
+                // 防止拖拽到自己或自己的子代中
+                if (draggedFolderNode.id === node.id || isDescendant(draggedFolderNode, node.id)) {
+                    e.dataTransfer.dropEffect = 'none';
+                    return;
+                }
+                
+                // 计算拖拽区域 (Top/Middle/Bottom)
+                const rect = nodeElement.getBoundingClientRect();
+                const offsetY = e.clientY - rect.top;
+                const height = rect.height;
+                const threshold = height * 0.25; // Top/Bottom 25% triggers reorder
+                
+                // Reset visual states
+                nodeElement.classList.remove('ring-2', 'ring-inset', 'ring-indigo-500', 'bg-indigo-50', 'dark:ring-indigo-400', 'dark:bg-indigo-900/20');
+                nodeElement.style.boxShadow = 'none';
+                
+                if (offsetY < threshold) {
+                    // Before
+                    nodeElement.style.boxShadow = 'inset 0 3px 0 0 #6366f1'; // Top blue line
+                    nodeElement.dataset.dropAction = 'before';
+                } else if (offsetY > height - threshold) {
+                    // After
+                    nodeElement.style.boxShadow = 'inset 0 -3px 0 0 #6366f1'; // Bottom blue line
+                    nodeElement.dataset.dropAction = 'after';
+                } else {
+                    // Inside
+                    nodeElement.classList.add('ring-2', 'ring-inset', 'ring-indigo-500', 'bg-indigo-50', 'dark:ring-indigo-400', 'dark:bg-indigo-900/20');
+                    nodeElement.dataset.dropAction = 'inside';
+                }
             });
 
             nodeElement.addEventListener('dragleave', (e) => {
@@ -332,13 +409,44 @@ function renderBookmarkTree(bookmark) {
                 if (nodeElement.contains(e.relatedTarget)) return;
 
                 nodeElement.classList.remove('ring-2', 'ring-inset', 'ring-indigo-500', 'bg-indigo-50', 'dark:ring-indigo-400', 'dark:bg-indigo-900/20');
+                nodeElement.style.boxShadow = 'none';
+                delete nodeElement.dataset.dropAction;
             });
 
             nodeElement.addEventListener('drop', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                
+                // Clear visuals
                 nodeElement.classList.remove('ring-2', 'ring-inset', 'ring-indigo-500', 'bg-indigo-50', 'dark:ring-indigo-400', 'dark:bg-indigo-900/20');
+                nodeElement.style.boxShadow = 'none';
+                
+                const action = nodeElement.dataset.dropAction;
+                delete nodeElement.dataset.dropAction;
 
+                // 1. 文件夹拖拽处理
+                if (draggedFolderNode) {
+                    if (draggedFolderNode.id === node.id) return;
+                    
+                    const destination = {};
+                    if (action === 'before') {
+                        destination.parentId = node.parentId;
+                        destination.index = node.index; // Insert at current index pushes this one down
+                    } else if (action === 'after') {
+                        destination.parentId = node.parentId;
+                        destination.index = node.index + 1;
+                    } else { // inside or default
+                        destination.parentId = node.id;
+                        // index not specified -> append to end
+                    }
+                    
+                    chrome.bookmarks.move(draggedFolderNode.id, destination, () => {
+                        loadBookmarks();
+                    });
+                    return;
+                }
+
+                // 2. 书签拖拽处理 (原有逻辑)
                 const bookmarkId = e.dataTransfer.getData('text/plain');
                 if (bookmarkId) {
                     chrome.bookmarks.move(bookmarkId, { parentId: node.id }, () => {
