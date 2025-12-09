@@ -43,6 +43,7 @@ document.addEventListener('DOMContentLoaded', function () {
     loadBookmarks();
     setupSearch();
     setupThemeEventListener(); // Renamed to avoid confusion with immediate apply
+    setupDonateModal(); // Setup donate modal listeners
 });
 
 function setupThemeEventListener() {
@@ -864,5 +865,50 @@ function hideContextMenu() {
         setTimeout(() => {
             contextMenu.classList.add('hidden');
         }, 100);
+    }
+}
+
+// --- 赞赏模态框逻辑 ---
+function setupDonateModal() {
+    const donateModal = document.getElementById('donate-modal');
+    const btnCoffee = document.getElementById('btn-coffee');
+    const btnCloseDonate = document.getElementById('btn-close-donate');
+    const donateBackdrop = document.getElementById('donate-backdrop');
+
+    if (btnCoffee && donateModal) {
+        btnCoffee.addEventListener('click', (e) => {
+            e.preventDefault();
+            donateModal.classList.remove('hidden');
+            // Animation
+            const content = donateModal.querySelector('.transform');
+            if (content) {
+                content.classList.remove('scale-95', 'opacity-0');
+                content.classList.add('scale-100', 'opacity-100');
+            }
+        });
+
+        const closeDonateModal = () => {
+            const content = donateModal.querySelector('.transform');
+            if (content) {
+                content.classList.remove('scale-100', 'opacity-100');
+                content.classList.add('scale-95', 'opacity-0');
+            }
+            setTimeout(() => {
+                donateModal.classList.add('hidden');
+            }, 150); // Wait for transition
+        };
+
+        if (btnCloseDonate) btnCloseDonate.addEventListener('click', closeDonateModal);
+        
+        // Handle click outside (on the backdrop/container)
+        // Since the flex container covers the backdrop, we need to listen on the wrapper logic
+        donateModal.addEventListener('click', (e) => {
+             // If the click is on the backdrop div or the flex container (empty space), close it
+             // Check if the click target is NOT inside the modal panel
+             const modalPanel = donateModal.querySelector('.transform');
+             if (modalPanel && !modalPanel.contains(e.target)) {
+                 closeDonateModal();
+             }
+        });
     }
 }

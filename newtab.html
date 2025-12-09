@@ -35,6 +35,25 @@
             <div id="bookmark-tree" class="flex-1 overflow-y-auto p-4 space-y-1 custom-scrollbar">
                 <!-- JS动态生成内容 -->
             </div>
+            <!-- buy a coffee -->
+            <div class="p-4 bg-slate-50 dark:bg-slate-900">
+                <button id="btn-coffee" type="button"
+                   class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-indigo-600 transition-colors group dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-indigo-400 text-left">
+                    
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 bg-slate-100 group-hover:bg-indigo-50 group-hover:text-indigo-500 transition-colors dark:bg-slate-800 dark:group-hover:bg-slate-700 dark:group-hover:text-indigo-400 shrink-0">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 1v3M10 1v3M14 1v3"></path>
+                        </svg>
+                    </div>
+
+                    <div class="flex-1 min-w-0">
+                        <h4 class="text-sm font-medium truncate">Buy me a coffee</h4>
+                    </div>
+                    
+                    <svg class="w-4 h-4 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </button>
+            </div>
         </aside>
 
         <!-- 右侧站点导航 Main Content -->
@@ -85,20 +104,7 @@
                     </div>
                 </div>
 
-                <!-- Google 搜索栏 (Hero) -->
-                <div class="px-8 pb-6 pt-1">
-                    <form action="https://www.google.com/search" method="get" class="relative max-w-3xl mx-auto group">
-                        <div
-                            class="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-hover:text-indigo-500 transition-colors dark:text-slate-500">
-                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                                <path
-                                    d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.748L12.545,10.239z" />
-                            </svg>
-                        </div>
-                        <input type="text" name="q" placeholder="Search Google..." autocomplete="off"
-                            class="w-full pl-14 pr-4 py-3.5 bg-slate-50 border-2 border-transparent rounded-2xl shadow-sm text-slate-700 text-lg focus:outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all hover:bg-white hover:shadow-md dark:bg-slate-800 dark:text-slate-200 dark:focus:bg-slate-800">
-                    </form>
-                </div>
+
             </header>
 
             <!-- 站点列表容器 -->
@@ -174,6 +180,43 @@
                         class="inline-flex w-full justify-center rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 sm:w-auto transition-colors">保存</button>
                     <button type="button" id="btn-cancel"
                         class="inline-flex w-full justify-center rounded-lg bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50 sm:w-auto transition-colors dark:bg-slate-700 dark:text-slate-200 dark:ring-slate-600 dark:hover:bg-slate-600">取消</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 赞赏模态框 (Donate Modal) -->
+    <div id="donate-modal" class="hidden fixed inset-0 z-[70] overflow-y-auto" role="dialog" aria-modal="true">
+        <!-- 背景遮罩 -->
+        <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" id="donate-backdrop"></div>
+
+        <div class="flex min-h-full items-center justify-center p-4 text-center">
+            <div class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all w-full max-w-sm border border-slate-100 dark:bg-slate-800 dark:border-slate-700">
+                
+                <!-- Close Button -->
+                <button type="button" id="btn-close-donate" class="absolute top-4 right-4 text-slate-400 hover:text-slate-500 dark:hover:text-slate-300 focus:outline-none transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+
+                <div class="px-6 py-8 flex flex-col items-center">
+                    <div class="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 mb-4 dark:bg-amber-900/30 dark:text-amber-400 shadow-sm">
+                         <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 1v3M10 1v3M14 1v3"></path>
+                        </svg>
+                    </div>
+                    
+                    <h3 class="text-xl font-bold text-slate-900 mb-2 dark:text-slate-100">Buy me a coffee</h3>
+                    <p class="text-sm text-slate-500 text-center mb-6 dark:text-slate-400 leading-relaxed">如果您觉得这个工具对您有帮助，<br>欢迎扫描下方二维码支持开发者。</p>
+                    
+                    <div class="p-3 bg-white rounded-xl shadow-inner border border-slate-100 dark:bg-slate-900 dark:border-slate-700">
+                        <img src="wechat_pay.jpg" alt="微信支付" class="w-48 h-48 object-contain rounded-lg" style="width: 12rem; height: 12rem;">
+                    </div>
+                    
+                    <p class="mt-4 text-xs text-slate-400 flex items-center gap-1.5 opacity-80">
+                        <svg class="w-4 h-4" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" width="64" height="64"><path d="M404.511405 600.865957c-4.042059 2.043542-8.602935 3.223415-13.447267 3.223415-11.197016 0-20.934798-6.169513-26.045189-15.278985l-1.959631-4.296863-81.56569-178.973184c-0.880043-1.954515-1.430582-4.14746-1.430582-6.285147 0-8.251941 6.686283-14.944364 14.938224-14.944364 3.351328 0 6.441713 1.108241 8.94165 2.966565l96.242971 68.521606c7.037277 4.609994 15.433504 7.305383 24.464181 7.305383 5.40101 0 10.533914-1.00284 15.328104-2.75167l452.645171-201.459315C811.496653 163.274644 677.866167 100.777241 526.648117 100.777241c-247.448742 0-448.035176 167.158091-448.035176 373.361453 0 112.511493 60.353576 213.775828 154.808832 282.214547 7.582699 5.405103 12.537548 14.292518 12.537548 24.325012 0 3.312442-0.712221 6.358825-1.569752 9.515724-7.544837 28.15013-19.62599 73.202209-20.188808 75.314313-0.940418 3.529383-2.416026 7.220449-2.416026 10.917654 0 8.245801 6.692423 14.933107 14.944364 14.933107 3.251044 0 5.89015-1.202385 8.629541-2.7793l98.085946-56.621579c7.377014-4.266164 15.188934-6.89913 23.790846-6.89913 4.577249 0 9.003048 0.703011 13.174044 1.978051 45.75509 13.159718 95.123474 20.476357 146.239666 20.476357 247.438509 0 448.042339-167.162184 448.042339-373.372709 0-62.451354-18.502399-121.275087-51.033303-173.009356L407.778822 598.977957 404.511405 600.865957z" fill="#00C800" p-id="4593"></path></svg>
+                        微信扫一扫支付
+                    </p>
                 </div>
             </div>
         </div>
