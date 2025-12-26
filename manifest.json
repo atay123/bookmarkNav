@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "书签导航网站",
+  "name": "Bookmark Navigation",
   "version": "1.0",
-  "description": "将浏览器书签以导航网站形式同步展现，替代默认新标签页",
+  "description": "Display browser bookmarks as a navigation dashboard, replacing the default new tab page.",
   "permissions": [
     "bookmarks",
     "favicon"

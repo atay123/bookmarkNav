@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>书签导航</title>
+    <title>Bookmark Nav</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -27,7 +27,7 @@
                                 d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
                         </svg>
                     </span>
-                    我的书签
+                    My Bookmarks
                 </h2>
             </div>
 
@@ -75,7 +75,7 @@
                                     d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6">
                                 </path>
                             </svg>
-                            首页
+                            Home
                         </span>
                     </nav>
 
@@ -83,7 +83,7 @@
                     <div class="flex items-center gap-3">
                         <!-- 书签过滤器 -->
                         <div class="relative group flex-shrink-0 w-64 transition-all focus-within:w-80">
-                            <input type="text" id="search-input" placeholder="搜索书签..."
+                            <input type="text" id="search-input" placeholder="Search bookmarks..."
                                 class="w-full pl-9 pr-4 py-1.5 bg-slate-100 border-transparent rounded-lg text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all dark:bg-slate-800 dark:text-slate-200 dark:focus:bg-slate-700">
                             <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 transition-colors group-focus-within:text-indigo-500"
                                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -93,7 +93,7 @@
                         </div>
 
                         <!-- 主题切换开关 -->
-                        <button id="theme-toggle" class="p-2 rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-indigo-600 transition-colors dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50" title="切换主题">
+                        <button id="theme-toggle" class="p-2 rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-indigo-600 transition-colors dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50" title="Toggle theme">
                             <!-- Sun Icon (显示在浅色模式，提示切换到深色或系统) -->
                             <svg id="theme-toggle-light-icon" class="w-5 h-5 block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                             <!-- Moon Icon (显示在深色模式，提示切换到浅色或系统) -->
@@ -123,7 +123,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"></path>
             </svg>
-            新建文件夹
+            New Folder
         </button>
         <button id="ctx-edit"
             class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-indigo-600 flex items-center gap-2 transition-colors dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-indigo-400">
@@ -132,7 +132,7 @@
                     d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
                 </path>
             </svg>
-            编辑
+            Edit
         </button>
         <button id="ctx-delete"
             class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors dark:text-red-400 dark:hover:bg-red-900/20">
@@ -141,7 +141,7 @@
                     d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
                 </path>
             </svg>
-            删除
+            Delete
         </button>
     </div>
 
@@ -156,18 +156,18 @@
                 class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-md border border-slate-100 dark:bg-slate-800 dark:border-slate-700">
                 <div class="px-6 py-6">
                     <h3 class="text-lg font-bold leading-6 text-slate-900 mb-4 dark:text-slate-100" id="modal-title">
-                        编辑书签</h3>
+                        Edit Bookmark</h3>
                     <form id="edit-form" class="space-y-4">
                         <div>
                             <label for="edit-title"
-                                class="block text-sm font-medium text-slate-700 mb-1 dark:text-slate-300">名称</label>
+                                class="block text-sm font-medium text-slate-700 mb-1 dark:text-slate-300">Name</label>
                             <input type="text" id="edit-title"
                                 class="w-full rounded-lg border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 dark:placeholder-slate-400"
                                 required>
                         </div>
                         <div>
                             <label for="edit-url"
-                                class="block text-sm font-medium text-slate-700 mb-1 dark:text-slate-300">网址</label>
+                                class="block text-sm font-medium text-slate-700 mb-1 dark:text-slate-300">URL</label>
                             <input type="url" id="edit-url"
                                 class="w-full rounded-lg border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 dark:placeholder-slate-400"
                                 required>
@@ -177,9 +177,9 @@
                 <div
                     class="bg-slate-50 px-6 py-4 flex flex-row-reverse gap-3 dark:bg-slate-800/50 dark:border-t dark:border-slate-700">
                     <button type="button" id="btn-save"
-                        class="inline-flex w-full justify-center rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 sm:w-auto transition-colors">保存</button>
+                        class="inline-flex w-full justify-center rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 sm:w-auto transition-colors">Save</button>
                     <button type="button" id="btn-cancel"
-                        class="inline-flex w-full justify-center rounded-lg bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50 sm:w-auto transition-colors dark:bg-slate-700 dark:text-slate-200 dark:ring-slate-600 dark:hover:bg-slate-600">取消</button>
+                        class="inline-flex w-full justify-center rounded-lg bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50 sm:w-auto transition-colors dark:bg-slate-700 dark:text-slate-200 dark:ring-slate-600 dark:hover:bg-slate-600">Cancel</button>
                 </div>
             </div>
         </div>
@@ -191,32 +191,15 @@
         <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" id="donate-backdrop"></div>
 
         <div class="flex min-h-full items-center justify-center p-4 text-center">
-            <div class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all w-full max-w-sm border border-slate-100 dark:bg-slate-800 dark:border-slate-700">
+            <div class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all w-full max-w-lg border border-slate-100 dark:bg-slate-800 dark:border-slate-700">
                 
                 <!-- Close Button -->
-                <button type="button" id="btn-close-donate" class="absolute top-4 right-4 text-slate-400 hover:text-slate-500 dark:hover:text-slate-300 focus:outline-none transition-colors">
+                <button type="button" id="btn-close-donate" class="absolute top-4 right-4 text-slate-400 hover:text-slate-500 dark:hover:text-slate-300 focus:outline-none transition-colors z-10">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
 
-                <div class="px-6 py-8 flex flex-col items-center">
-                    <div class="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 mb-4 dark:bg-amber-900/30 dark:text-amber-400 shadow-sm">
-                         <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"></path>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 1v3M10 1v3M14 1v3"></path>
-                        </svg>
-                    </div>
-                    
-                    <h3 class="text-xl font-bold text-slate-900 mb-2 dark:text-slate-100">Buy me a coffee</h3>
-                    <p class="text-sm text-slate-500 text-center mb-6 dark:text-slate-400 leading-relaxed">如果您觉得这个工具对您有帮助，<br>欢迎扫描下方二维码支持开发者。</p>
-                    
-                    <div class="p-3 bg-white rounded-xl shadow-inner border border-slate-100 dark:bg-slate-900 dark:border-slate-700">
-                        <img src="wechat_pay.jpg" alt="微信支付" class="w-48 h-48 object-contain rounded-lg" style="width: 12rem; height: 12rem;">
-                    </div>
-                    
-                    <p class="mt-4 text-xs text-slate-400 flex items-center gap-1.5 opacity-80">
-                        <svg class="w-4 h-4" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" width="64" height="64"><path d="M404.511405 600.865957c-4.042059 2.043542-8.602935 3.223415-13.447267 3.223415-11.197016 0-20.934798-6.169513-26.045189-15.278985l-1.959631-4.296863-81.56569-178.973184c-0.880043-1.954515-1.430582-4.14746-1.430582-6.285147 0-8.251941 6.686283-14.944364 14.938224-14.944364 3.351328 0 6.441713 1.108241 8.94165 2.966565l96.242971 68.521606c7.037277 4.609994 15.433504 7.305383 24.464181 7.305383 5.40101 0 10.533914-1.00284 15.328104-2.75167l452.645171-201.459315C811.496653 163.274644 677.866167 100.777241 526.648117 100.777241c-247.448742 0-448.035176 167.158091-448.035176 373.361453 0 112.511493 60.353576 213.775828 154.808832 282.214547 7.582699 5.405103 12.537548 14.292518 12.537548 24.325012 0 3.312442-0.712221 6.358825-1.569752 9.515724-7.544837 28.15013-19.62599 73.202209-20.188808 75.314313-0.940418 3.529383-2.416026 7.220449-2.416026 10.917654 0 8.245801 6.692423 14.933107 14.944364 14.933107 3.251044 0 5.89015-1.202385 8.629541-2.7793l98.085946-56.621579c7.377014-4.266164 15.188934-6.89913 23.790846-6.89913 4.577249 0 9.003048 0.703011 13.174044 1.978051 45.75509 13.159718 95.123474 20.476357 146.239666 20.476357 247.438509 0 448.042339-167.162184 448.042339-373.372709 0-62.451354-18.502399-121.275087-51.033303-173.009356L407.778822 598.977957 404.511405 600.865957z" fill="#00C800" p-id="4593"></path></svg>
-                        微信扫一扫支付
-                    </p>
+                <div class="p-1 bg-[#f9f9f9] dark:bg-slate-900">
+                    <iframe id='kofiframe' src='https://ko-fi.com/rontae/?hidefeed=true&widget=true&embed=true&preview=true' style='border:none;width:100%;padding:4px;background:#f9f9f9;' height='712' title='rontae'></iframe>
                 </div>
             </div>
         </div>

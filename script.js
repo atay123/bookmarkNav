@@ -144,7 +144,7 @@ function renderBreadcrumbs(path) {
     homeLink.className = 'flex items-center gap-1 cursor-pointer hover:text-indigo-600 transition-colors';
     homeLink.innerHTML = `
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-        首页
+        Home
     `;
     homeLink.onclick = () => {
         if (allBookmarks && allBookmarks.length > 0) {
@@ -487,9 +487,9 @@ function renderBookmarkSites(folder) {
         sitesContainer.innerHTML = `
             <div class="flex flex-col items-center justify-center h-96 text-slate-400">
                 <svg class="w-16 h-16 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
-                <p class="mb-4">此文件夹为空</p>
+                <p class="mb-4">This folder is empty</p>
                 <button id="btn-empty-help" class="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors text-sm font-medium dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-900/50">
-                    如何添加书签?
+                    How to add bookmarks?
                 </button>
             </div>
         `;
@@ -497,7 +497,7 @@ function renderBookmarkSites(folder) {
         const helpBtn = sitesContainer.querySelector('#btn-empty-help');
         if (helpBtn) {
             helpBtn.addEventListener('click', () => {
-                alert('请使用浏览器快捷键 Ctrl+D (Cmd+D) 添加书签');
+                alert('Please use the browser shortcut Ctrl+D (Cmd+D) to add bookmarks.');
             });
         }
         return;
@@ -684,11 +684,11 @@ function setupSearch() {
 
             const breadcrumbsContainer = document.getElementById('breadcrumbs');
             if (breadcrumbsContainer) {
-                breadcrumbsContainer.innerHTML = `<span class="text-slate-500 dark:text-slate-400">搜索结果: "${query}" (${results.length})</span>`;
+                breadcrumbsContainer.innerHTML = `<span class="text-slate-500 dark:text-slate-400">Search Results: "${query}" (${results.length})</span>`;
             }
 
             if (results.length === 0) {
-                sitesContainer.innerHTML = '<p class="text-center text-slate-400 mt-10">未找到匹配的书签</p>';
+                sitesContainer.innerHTML = '<p class="text-center text-slate-400 mt-10">No matching bookmarks found</p>';
                 return;
             }
 
@@ -726,7 +726,7 @@ document.addEventListener('click', (e) => {
 document.getElementById('ctx-delete').addEventListener('click', () => {
     if (contextMenuTargetId) {
         const isFolder = contextMenuTargetType === 'folder';
-        const msg = isFolder ? '确定要删除这个文件夹及其所有内容吗？此操作不可恢复！' : '确定要删除这个书签吗？';
+        const msg = isFolder ? 'Are you sure you want to delete this folder and all its contents? This cannot be undone!' : 'Are you sure you want to delete this bookmark?';
 
         if (confirm(msg)) {
             const removeFunc = isFolder ? chrome.bookmarks.removeTree : chrome.bookmarks.remove;
@@ -746,7 +746,7 @@ document.getElementById('ctx-delete').addEventListener('click', () => {
 // 新建文件夹按钮
 document.getElementById('ctx-new-folder').addEventListener('click', () => {
     if (contextMenuTargetId && contextMenuTargetType === 'folder') {
-        const name = prompt("请输入新文件夹名称:", "新建文件夹");
+        const name = prompt("Enter new folder name:", "New Folder");
         if (name) {
             chrome.bookmarks.create({
                 parentId: contextMenuTargetId,
