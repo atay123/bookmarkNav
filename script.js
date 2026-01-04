@@ -613,7 +613,6 @@ function renderSiteCard(node, container, showPath = false) {
 
     const card = document.createElement('a');
     card.href = node.url;
-    card.target = "_blank";
     card.dataset.id = node.id;
     // Use pointer-events-none for children to ensure drag events fire on the card container
     card.className = `
