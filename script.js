@@ -877,6 +877,11 @@ function setupDonateModal() {
     if (btnCoffee && donateModal) {
         btnCoffee.addEventListener('click', (e) => {
             e.preventDefault();
+            const iframe = document.getElementById('kofiframe');
+            if (iframe && !iframe.getAttribute('src')) {
+                const src = iframe.getAttribute('data-src');
+                if (src) iframe.setAttribute('src', src);
+            }
             donateModal.classList.remove('hidden');
             // Animation
             const content = donateModal.querySelector('.transform');
