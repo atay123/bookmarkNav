@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Bookmark Navigation",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Display browser bookmarks as a navigation dashboard, replacing the default new tab page.",
   "permissions": [
     "bookmarks",
