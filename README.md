@@ -73,7 +73,6 @@ bookmarkNav/
 ├── package.json
 ├── package-lock.json
 ├── icon.png
-├── icon_result.png
 └── README.md
 ```
 

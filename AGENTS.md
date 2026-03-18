@@ -8,7 +8,7 @@
 - `src/input.css` is the Tailwind source file.
 - `tailwind.config.js` holds Tailwind configuration.
 - `README.md` documents installation, features, and manual verification steps.
-- Assets like `icon.png` and `icon_result.png` live at the repo root.
+- Assets like `icon.png` live at the repo root.
 
 ## Build, Test, and Development Commands
 - `npm install`: installs Tailwind/PostCSS dependencies for building CSS.
