@@ -43,7 +43,6 @@ document.addEventListener('DOMContentLoaded', function () {
     loadBookmarks();
     setupSearch();
     setupThemeEventListener(); // Renamed to avoid confusion with immediate apply
-    setupDonateModal(); // Setup donate modal listeners
 });
 
 function setupThemeEventListener() {
@@ -80,12 +79,28 @@ function getFaviconUrl(pageUrl) {
 }
 
 // 加载所有书签
-function loadBookmarks() {
+function loadBookmarks(options = {}) {
+    const { selectedFolderId = null, preserveSearch = true } = options;
     chrome.bookmarks.getTree(function (bookmarkTreeNodes) {
         allBookmarks = bookmarkTreeNodes;
         const rootNode = bookmarkTreeNodes[0];
 
         renderBookmarkTree(rootNode);
+
+        const searchInput = document.getElementById('search-input');
+        const activeQuery = preserveSearch && searchInput ? searchInput.value.trim() : '';
+        if (activeQuery) {
+            renderSearchResults(activeQuery);
+            return;
+        }
+
+        if (selectedFolderId) {
+            const selectedFolder = findNodeById(rootNode, selectedFolderId);
+            if (selectedFolder && selectedFolder.children) {
+                renderBookmarkSites(selectedFolder);
+                return;
+            }
+        }
 
         // 默认显示第一个有内容的文件夹
         let defaultFolder = findFirstFolder(rootNode);
@@ -106,6 +121,19 @@ function findFirstFolder(node) {
             if (found) return found;
         }
     }
+    return null;
+}
+
+function findNodeById(node, targetId) {
+    if (!node || !targetId) return null;
+    if (node.id === targetId) return node;
+    if (!node.children) return null;
+
+    for (const child of node.children) {
+        const found = findNodeById(child, targetId);
+        if (found) return found;
+    }
+
     return null;
 }
 
@@ -671,36 +699,40 @@ function renderSiteCard(node, container, showPath = false) {
 function setupSearch() {
     const searchInput = document.getElementById('search-input');
     searchInput.addEventListener('input', (e) => {
-        const query = e.target.value.toLowerCase();
+        const query = e.target.value.trim();
         if (!query) {
             if (currentFolder) renderBookmarkSites(currentFolder);
             return;
         }
 
-        chrome.bookmarks.search(query, (results) => {
-            const sitesContainer = document.getElementById('bookmark-sites');
-            sitesContainer.innerHTML = '';
+        renderSearchResults(query);
+    });
+}
 
-            const breadcrumbsContainer = document.getElementById('breadcrumbs');
-            if (breadcrumbsContainer) {
-                breadcrumbsContainer.innerHTML = `<span class="text-slate-500 dark:text-slate-400">Search Results: "${query}" (${results.length})</span>`;
+function renderSearchResults(query) {
+    chrome.bookmarks.search(query, (results) => {
+        const sitesContainer = document.getElementById('bookmark-sites');
+        sitesContainer.innerHTML = '';
+
+        const breadcrumbsContainer = document.getElementById('breadcrumbs');
+        if (breadcrumbsContainer) {
+            breadcrumbsContainer.innerHTML = `<span class="text-slate-500 dark:text-slate-400">Search Results: "${query}" (${results.length})</span>`;
+        }
+
+        if (results.length === 0) {
+            sitesContainer.innerHTML = '<p class="text-center text-slate-400 mt-10">No matching bookmarks found</p>';
+            return;
+        }
+
+        const sitesGrid = document.createElement('div');
+        sitesGrid.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 pb-10';
+
+        results.forEach(node => {
+            if (node.url) {
+                renderSiteCard(node, sitesGrid, true);
             }
-
-            if (results.length === 0) {
-                sitesContainer.innerHTML = '<p class="text-center text-slate-400 mt-10">No matching bookmarks found</p>';
-                return;
-            }
-
-            const sitesGrid = document.createElement('div');
-            sitesGrid.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 pb-10';
-
-            results.forEach(node => {
-                if (node.url) {
-                    renderSiteCard(node, sitesGrid, true);
-                }
-            });
-            sitesContainer.appendChild(sitesGrid);
         });
+        sitesContainer.appendChild(sitesGrid);
     });
 }
 
@@ -708,12 +740,22 @@ function setupSearch() {
 
 let contextMenuTargetId = null;
 let contextMenuTargetType = 'bookmark'; // 'bookmark' or 'folder'
+let pendingDeleteTarget = null;
+let isDeletePending = false;
 
 const contextMenu = document.getElementById('context-menu');
 const editModal = document.getElementById('edit-modal');
 const editTitleInput = document.getElementById('edit-title');
 const editUrlInput = document.getElementById('edit-url');
 const editUrlContainer = editUrlInput.parentElement; // Used to hide/show URL input
+const deleteModal = document.getElementById('delete-modal');
+const deleteModalBadge = document.getElementById('delete-modal-badge');
+const deleteModalTitle = document.getElementById('delete-modal-title');
+const deleteModalDescription = document.getElementById('delete-modal-description');
+const deleteModalName = document.getElementById('delete-modal-name');
+const deleteModalMeta = document.getElementById('delete-modal-meta');
+const deleteCancelBtn = document.getElementById('btn-delete-cancel');
+const deleteConfirmBtn = document.getElementById('btn-delete-confirm');
 
 // 初始化菜单事件
 document.addEventListener('click', (e) => {
@@ -721,25 +763,132 @@ document.addEventListener('click', (e) => {
     hideContextMenu();
 });
 
+function showBookmarkError(actionLabel) {
+    if (!chrome.runtime.lastError) return false;
+
+    const message = chrome.runtime.lastError.message || 'Unknown error';
+    console.error(`Failed to ${actionLabel}:`, message);
+    alert(`Failed to ${actionLabel}: ${message}`);
+    return true;
+}
+
+function getNodeDisplayName(node, type) {
+    if (node && node.title) return node.title;
+    return type === 'folder' ? 'Untitled folder' : 'Untitled bookmark';
+}
+
+function countFolderContents(node) {
+    const totals = { bookmarks: 0, folders: 0 };
+
+    function walk(currentNode) {
+        if (!currentNode.children) return;
+
+        currentNode.children.forEach(child => {
+            if (child.children) {
+                totals.folders += 1;
+                walk(child);
+            } else {
+                totals.bookmarks += 1;
+            }
+        });
+    }
+
+    walk(node);
+    return totals;
+}
+
+function formatFolderDeleteMeta(totals) {
+    const details = [];
+    if (totals.bookmarks > 0) {
+        details.push(`${totals.bookmarks} bookmark${totals.bookmarks === 1 ? '' : 's'}`);
+    }
+    if (totals.folders > 0) {
+        details.push(`${totals.folders} subfolder${totals.folders === 1 ? '' : 's'}`);
+    }
+
+    if (details.length === 0) {
+        return 'This folder is empty.';
+    }
+
+    return `Contains ${details.join(' and ')}.`;
+}
+
+function setDeleteModalPendingState(isPending) {
+    isDeletePending = isPending;
+    deleteConfirmBtn.disabled = isPending;
+    deleteCancelBtn.disabled = isPending;
+    deleteConfirmBtn.textContent = isPending ? 'Deleting...' : pendingDeleteTarget?.confirmLabel || 'Delete';
+    deleteConfirmBtn.classList.toggle('opacity-75', isPending);
+    deleteConfirmBtn.classList.toggle('cursor-not-allowed', isPending);
+}
+
+function openDeleteModal(config) {
+    pendingDeleteTarget = config;
+    deleteModalBadge.textContent = config.type === 'folder' ? 'Folder' : 'Bookmark';
+    deleteModalTitle.textContent = config.title;
+    deleteModalDescription.textContent = config.description;
+    deleteModalName.textContent = config.name;
+    deleteModalMeta.textContent = config.meta || '';
+    deleteModalMeta.classList.toggle('hidden', !config.meta);
+    deleteModal.classList.remove('hidden');
+    setDeleteModalPendingState(false);
+
+    setTimeout(() => {
+        deleteCancelBtn.focus();
+    }, 50);
+}
+
+function closeDeleteModal(force = false) {
+    if (isDeletePending && !force) return;
+
+    deleteModal.classList.add('hidden');
+    pendingDeleteTarget = null;
+}
+
 // 删除按钮
 document.getElementById('ctx-delete').addEventListener('click', () => {
-    if (contextMenuTargetId) {
-        const isFolder = contextMenuTargetType === 'folder';
-        const msg = isFolder ? 'Are you sure you want to delete this folder and all its contents? This cannot be undone!' : 'Are you sure you want to delete this bookmark?';
+    if (!contextMenuTargetId) return;
 
-        if (confirm(msg)) {
-            const removeFunc = isFolder ? chrome.bookmarks.removeTree : chrome.bookmarks.remove;
-            removeFunc(contextMenuTargetId, () => {
-                // 删除成功后刷新视图
-                if (isFolder) {
-                    loadBookmarks(); // 文件夹变动需刷新树
-                } else {
-                    const cardToRemove = document.querySelector(`a[data-id="${contextMenuTargetId}"]`);
-                    if (cardToRemove) cardToRemove.remove();
-                }
+    hideContextMenu();
+
+    if (contextMenuTargetType === 'folder') {
+        chrome.bookmarks.getSubTree(contextMenuTargetId, (results) => {
+            if (showBookmarkError('load the folder details')) return;
+            if (!results || results.length === 0) return;
+
+            const folder = results[0];
+            const totals = countFolderContents(folder);
+
+            openDeleteModal({
+                id: folder.id,
+                type: 'folder',
+                parentId: folder.parentId,
+                name: getNodeDisplayName(folder, 'folder'),
+                title: 'Delete folder?',
+                description: 'This will permanently remove the folder and everything inside it.',
+                meta: formatFolderDeleteMeta(totals),
+                confirmLabel: 'Delete folder'
             });
-        }
+        });
+        return;
     }
+
+    chrome.bookmarks.get(contextMenuTargetId, (results) => {
+        if (showBookmarkError('load the bookmark details')) return;
+        if (!results || results.length === 0) return;
+
+        const bookmark = results[0];
+        openDeleteModal({
+            id: bookmark.id,
+            type: 'bookmark',
+            parentId: bookmark.parentId,
+            name: getNodeDisplayName(bookmark, 'bookmark'),
+            title: 'Delete bookmark?',
+            description: 'This will permanently remove the bookmark from Chrome.',
+            meta: bookmark.url || '',
+            confirmLabel: 'Delete bookmark'
+        });
+    });
 });
 
 // 新建文件夹按钮
@@ -785,6 +934,42 @@ document.getElementById('ctx-edit').addEventListener('click', () => {
 // 模态框：取消
 document.getElementById('btn-cancel').addEventListener('click', () => {
     editModal.classList.add('hidden');
+});
+
+deleteCancelBtn.addEventListener('click', () => {
+    closeDeleteModal();
+});
+
+deleteModal.addEventListener('click', (e) => {
+    const deletePanel = deleteModal.querySelector('[data-delete-panel]');
+    if (deletePanel && !deletePanel.contains(e.target)) {
+        closeDeleteModal();
+    }
+});
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !deleteModal.classList.contains('hidden')) {
+        closeDeleteModal();
+    }
+});
+
+deleteConfirmBtn.addEventListener('click', () => {
+    if (!pendingDeleteTarget || isDeletePending) return;
+
+    setDeleteModalPendingState(true);
+
+    const { id, type, parentId } = pendingDeleteTarget;
+    const removeFunc = type === 'folder' ? chrome.bookmarks.removeTree : chrome.bookmarks.remove;
+
+    removeFunc(id, () => {
+        if (showBookmarkError(`delete the ${type}`)) {
+            setDeleteModalPendingState(false);
+            return;
+        }
+
+        closeDeleteModal(true);
+        loadBookmarks({ selectedFolderId: parentId });
+    });
 });
 
 // 模态框：保存
@@ -864,55 +1049,5 @@ function hideContextMenu() {
         setTimeout(() => {
             contextMenu.classList.add('hidden');
         }, 100);
-    }
-}
-
-// --- 赞赏模态框逻辑 ---
-function setupDonateModal() {
-    const donateModal = document.getElementById('donate-modal');
-    const btnCoffee = document.getElementById('btn-coffee');
-    const btnCloseDonate = document.getElementById('btn-close-donate');
-    const donateBackdrop = document.getElementById('donate-backdrop');
-
-    if (btnCoffee && donateModal) {
-        btnCoffee.addEventListener('click', (e) => {
-            e.preventDefault();
-            const iframe = document.getElementById('kofiframe');
-            if (iframe && !iframe.getAttribute('src')) {
-                const src = iframe.getAttribute('data-src');
-                if (src) iframe.setAttribute('src', src);
-            }
-            donateModal.classList.remove('hidden');
-            // Animation
-            const content = donateModal.querySelector('.transform');
-            if (content) {
-                content.classList.remove('scale-95', 'opacity-0');
-                content.classList.add('scale-100', 'opacity-100');
-            }
-        });
-
-        const closeDonateModal = () => {
-            const content = donateModal.querySelector('.transform');
-            if (content) {
-                content.classList.remove('scale-100', 'opacity-100');
-                content.classList.add('scale-95', 'opacity-0');
-            }
-            setTimeout(() => {
-                donateModal.classList.add('hidden');
-            }, 150); // Wait for transition
-        };
-
-        if (btnCloseDonate) btnCloseDonate.addEventListener('click', closeDonateModal);
-        
-        // Handle click outside (on the backdrop/container)
-        // Since the flex container covers the backdrop, we need to listen on the wrapper logic
-        donateModal.addEventListener('click', (e) => {
-             // If the click is on the backdrop div or the flex container (empty space), close it
-             // Check if the click target is NOT inside the modal panel
-             const modalPanel = donateModal.querySelector('.transform');
-             if (modalPanel && !modalPanel.contains(e.target)) {
-                 closeDonateModal();
-             }
-        });
     }
 }
