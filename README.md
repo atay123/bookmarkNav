@@ -24,6 +24,16 @@
   - `chrome_url_overrides`
 - Manifest V3
 
+## Permissions
+
+- `bookmarks`: 读取、创建、编辑、删除书签与文件夹，并支持拖拽整理所需的书签结构变更。
+- `favicon`: 读取站点 favicon 用于书签卡片展示。
+
+## Privacy / Data
+
+- 所有书签数据仅在本地浏览器中读取与处理。
+- 扩展不收集、不上传你的书签数据；也不依赖任何远程服务端。
+
 ## Development
 
 1. 克隆仓库：
@@ -99,3 +109,7 @@ bookmarkNav/
 - 删除确认弹窗正常显示，删除后结果正确同步
 - 书签拖拽排序和跨文件夹移动正常
 - 搜索结果与清空搜索后的视图切换正常
+
+## License
+
+MIT License. See [LICENSE](./LICENSE).
