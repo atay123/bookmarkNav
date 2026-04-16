@@ -2,6 +2,10 @@
 
 一个用来替换 Chrome 默认新标签页的书签导航扩展。界面采用左侧文件夹树 + 右侧书签卡片网格布局，适合快速浏览、整理和搜索浏览器书签。
 
+## Screenshot
+
+![BookmarkNav UI Screenshot](https://lh3.googleusercontent.com/Lk9FWL2sugDv_1XOwZCcjAfnrjGMbj7D8ZkxG7CACj571De0O4KBlVp-23v4uduakR877S1zdTTBx5ZHBOINVMc-AA=s1280-w1280-h800)
+
 ## Features
 
 - 书签树导航：左侧支持多层级文件夹展开、折叠，并记住展开状态。
