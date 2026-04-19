@@ -117,6 +117,10 @@ bookmarkNav/
 - 书签拖拽排序和跨文件夹移动正常
 - 搜索结果与清空搜索后的视图切换正常
 
+## 鸣谢
+
+特别感谢 [LINUX DO](https://linux.do/) 社区的支持与启发。
+
 ## License
 
 MIT License. See [LICENSE](./LICENSE).

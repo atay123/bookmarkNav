@@ -117,6 +117,10 @@ bookmarkNav/
 - Bookmark drag-and-drop ordering and cross-folder moves work.
 - Search results and clearing search switch views correctly.
 
+## Acknowledgments
+
+Special thanks to [LINUX DO](https://linux.do/) for their support and inspiration.
+
 ## License
 
 MIT License. See [LICENSE](./LICENSE).
