@@ -126,91 +126,96 @@
         </button>
     </div>
 
+    <!-- 新建文件夹模态框 (New Folder Modal) -->
+    <div id="new-folder-modal" class="modal-root hidden z-[60]" aria-labelledby="new-folder-modal-title"
+        role="dialog" aria-modal="true">
+        <div class="modal-backdrop"></div>
+
+        <div class="modal-shell">
+            <div data-new-folder-panel class="modal-panel">
+                <div class="modal-body">
+                    <h3 class="modal-title mb-4" id="new-folder-modal-title">New Folder</h3>
+                    <form id="new-folder-form" class="space-y-4">
+                        <div>
+                            <label for="new-folder-name" class="modal-label">Name</label>
+                            <input type="text" id="new-folder-name" class="modal-input" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="btn-create-folder"
+                        class="modal-button-primary">Create</button>
+                    <button type="button" id="btn-new-folder-cancel"
+                        class="modal-button-secondary">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- 编辑模态框 (Edit Modal) -->
-    <div id="edit-modal" class="hidden fixed inset-0 z-[60] overflow-y-auto" aria-labelledby="modal-title" role="dialog"
+    <div id="edit-modal" class="modal-root hidden z-[60]" aria-labelledby="modal-title" role="dialog"
         aria-modal="true">
         <!-- 背景遮罩 -->
-        <div class="fixed inset-0 bg-slate-900/20 backdrop-blur-sm transition-opacity dark:bg-slate-900/50"></div>
+        <div class="modal-backdrop"></div>
 
-        <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-            <div
-                class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-md border border-slate-100 dark:bg-slate-800 dark:border-slate-700">
-                <div class="px-6 py-6">
-                    <h3 class="text-lg font-bold leading-6 text-slate-900 mb-4 dark:text-slate-100" id="modal-title">
+        <div class="modal-shell">
+            <div class="modal-panel">
+                <div class="modal-body">
+                    <h3 class="modal-title mb-4" id="modal-title">
                         Edit Bookmark</h3>
                     <form id="edit-form" class="space-y-4">
                         <div>
                             <label for="edit-title"
-                                class="block text-sm font-medium text-slate-700 mb-1 dark:text-slate-300">Name</label>
+                                class="modal-label">Name</label>
                             <input type="text" id="edit-title"
-                                class="w-full rounded-lg border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 dark:placeholder-slate-400"
+                                class="modal-input"
                                 required>
                         </div>
                         <div>
                             <label for="edit-url"
-                                class="block text-sm font-medium text-slate-700 mb-1 dark:text-slate-300">URL</label>
+                                class="modal-label">URL</label>
                             <input type="url" id="edit-url"
-                                class="w-full rounded-lg border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 dark:placeholder-slate-400"
+                                class="modal-input"
                                 required>
                         </div>
                     </form>
                 </div>
-                <div
-                    class="bg-slate-50 px-6 py-4 flex flex-row-reverse gap-3 dark:bg-slate-800/50 dark:border-t dark:border-slate-700">
+                <div class="modal-footer">
                     <button type="button" id="btn-save"
-                        class="inline-flex w-full justify-center rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 sm:w-auto transition-colors">Save</button>
+                        class="modal-button-primary">Save</button>
                     <button type="button" id="btn-cancel"
-                        class="inline-flex w-full justify-center rounded-lg bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50 sm:w-auto transition-colors dark:bg-slate-700 dark:text-slate-200 dark:ring-slate-600 dark:hover:bg-slate-600">Cancel</button>
+                        class="modal-button-secondary">Cancel</button>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- 删除确认模态框 (Delete Modal) -->
-    <div id="delete-modal" class="hidden fixed inset-0 z-[70] overflow-y-auto" aria-labelledby="delete-modal-title"
+    <div id="delete-modal" class="modal-root hidden z-[70]" aria-labelledby="delete-modal-title"
         aria-describedby="delete-modal-description" role="dialog" aria-modal="true">
-        <div class="fixed inset-0 bg-slate-900/30 backdrop-blur-sm transition-opacity dark:bg-slate-900/60"></div>
+        <div class="modal-backdrop"></div>
 
-        <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-            <div data-delete-panel
-                class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-lg border border-slate-100 dark:bg-slate-800 dark:border-slate-700">
-                <div class="px-6 pt-6 pb-5">
-                    <div class="flex items-start gap-4">
-                        <div
-                            class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-red-50 text-red-600 ring-1 ring-inset ring-red-100 dark:bg-red-500/10 dark:text-red-300 dark:ring-red-500/20">
-                            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
-                                </path>
-                            </svg>
-                        </div>
+        <div class="modal-shell">
+            <div data-delete-panel class="modal-panel">
+                <div class="modal-body">
+                    <h3 id="delete-modal-title" class="modal-title">Delete item?</h3>
+                    <p id="delete-modal-description" class="modal-description mt-2">
+                        This action cannot be undone.
+                    </p>
 
-                        <div class="min-w-0 flex-1">
-                            <span id="delete-modal-badge"
-                                class="inline-flex items-center rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-red-600 dark:bg-red-500/10 dark:text-red-300">Delete</span>
-                            <h3 id="delete-modal-title"
-                                class="mt-3 text-lg font-bold leading-6 text-slate-900 dark:text-slate-100">Delete item?</h3>
-                            <p id="delete-modal-description" class="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
-                                This action cannot be undone.
-                            </p>
-
-                            <div
-                                class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-900/60">
-                                <p id="delete-modal-name"
-                                    class="text-sm font-semibold text-slate-800 break-all dark:text-slate-100">Untitled</p>
-                                <p id="delete-modal-meta"
-                                    class="mt-1 text-xs leading-5 text-slate-500 break-all dark:text-slate-400"></p>
-                            </div>
-                        </div>
+                    <div class="modal-readonly-field mt-4">
+                        <p id="delete-modal-name"
+                            class="text-sm font-semibold text-slate-800 break-all dark:text-slate-100">Untitled</p>
+                        <p id="delete-modal-meta"
+                            class="mt-1 text-xs leading-5 text-slate-500 break-all dark:text-slate-400"></p>
                     </div>
                 </div>
 
-                <div
-                    class="bg-slate-50 px-6 py-4 flex flex-row-reverse gap-3 dark:bg-slate-800/50 dark:border-t dark:border-slate-700">
+                <div class="modal-footer">
                     <button type="button" id="btn-delete-confirm"
-                        class="inline-flex w-full justify-center rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 sm:w-auto transition-colors focus:outline-none focus:ring-2 focus:ring-red-500/50">Delete</button>
+                        class="modal-button-danger">Delete</button>
                     <button type="button" id="btn-delete-cancel"
-                        class="inline-flex w-full justify-center rounded-lg bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50 sm:w-auto transition-colors dark:bg-slate-700 dark:text-slate-200 dark:ring-slate-600 dark:hover:bg-slate-600">Cancel</button>
+                        class="modal-button-secondary">Cancel</button>
                 </div>
             </div>
         </div>

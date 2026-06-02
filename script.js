@@ -540,7 +540,7 @@ function renderBookmarkSites(folder) {
     // 初始化原生拖拽
     let draggedItem = null;
 
-    sitesGrid.querySelectorAll('a').forEach(item => {
+    sitesGrid.querySelectorAll('[data-bookmark-card]').forEach(item => {
         item.setAttribute('draggable', true);
 
         item.addEventListener('dragstart', function (e) {
@@ -557,7 +557,7 @@ function renderBookmarkSites(folder) {
             item.classList.remove('opacity-50', 'scale-95', 'ring-2', 'ring-indigo-200');
             draggedItem = null;
             // 清除所有卡片的指示样式
-            sitesGrid.querySelectorAll('a').forEach(el => {
+            sitesGrid.querySelectorAll('[data-bookmark-card]').forEach(el => {
                 el.style.boxShadow = 'none';
                 el.style.transform = ''; // 清除可能的位移
             });
@@ -627,6 +627,18 @@ function renderBookmarkSites(folder) {
     });
 }
 
+function escapeHtml(value) {
+    const entities = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    };
+
+    return String(value || '').replace(/[&<>"']/g, char => entities[char]);
+}
+
 // 渲染单个站点卡片
 function renderSiteCard(node, container, showPath = false) {
     let hostname = '';
@@ -638,21 +650,19 @@ function renderSiteCard(node, container, showPath = false) {
     }
 
     const faviconUrl = getFaviconUrl(node.url);
+    const safeTitle = escapeHtml(node.title || 'Untitled');
+    const safeHostname = escapeHtml(hostname);
+    const safeUrl = escapeHtml(node.url);
 
-    const card = document.createElement('a');
-    card.href = node.url;
+    const card = document.createElement('div');
     card.dataset.id = node.id;
-    // Use pointer-events-none for children to ensure drag events fire on the card container
+    card.dataset.bookmarkCard = 'true';
     card.className = `
-        group bg-white rounded-2xl p-5 shadow-[0_2px_8px_rgb(0,0,0,0.04)] 
+        bookmark-card group bg-white rounded-2xl p-5 shadow-[0_2px_8px_rgb(0,0,0,0.04)]
         hover:shadow-[0_8px_24px_rgb(0,0,0,0.08)] hover:-translate-y-1 
-        transition-all duration-300 flex flex-col relative h-32
+        transition-all duration-300 flex flex-col relative h-32 cursor-pointer
         dark:bg-slate-800 dark:shadow-none dark:hover:bg-slate-750 dark:hover:shadow-lg dark:hover:shadow-black/20
-    `; // Removed overflow-hidden to allow markers (if positioned outside) or just to be safe. 
-    // Actually, keeping overflow-hidden is better for rounded corners, but we need markers to be visible.
-    // Markers are absolute inside relative card. As long as they are inside the bounds, overflow-hidden is fine.
-    // I will keep overflow-hidden but make markers clearer.
-
+    `;
     card.className += " overflow-hidden";
 
     if (showPath && node.parentId) {
@@ -667,30 +677,37 @@ function renderSiteCard(node, container, showPath = false) {
         });
     }
 
-    // Re-append markers after innerHTML is set
-
     card.addEventListener('contextmenu', function (e) {
         e.preventDefault();
         showContextMenu(e.clientX, e.clientY, node.id, 'bookmark');
     });
 
-    // Added pointer-events-none to internal elements to prevent drag flicker
     card.innerHTML = `
-        <div class="flex items-start justify-between mb-3 pointer-events-none">
-            <div class="w-10 h-10 rounded-xl bg-slate-50 p-0.5 flex items-center justify-center group-hover:scale-105 transition-transform dark:bg-slate-700/50">
+        <a href="${safeUrl}" draggable="false" data-card-link class="absolute inset-0 z-0" aria-label="Open ${safeTitle}"></a>
+        <div class="relative z-10 flex items-start justify-between mb-3 pointer-events-none">
+            <div class="w-10 h-10 rounded-xl bg-slate-50 p-0.5 flex items-center justify-center group-hover:scale-105 transition-transform dark:bg-slate-700/50 pointer-events-none">
                 <img src="${faviconUrl}" class="w-8 h-8 object-contain rounded-lg" alt="icon">
             </div>
-            <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-200 transform translate-x-2 group-hover:translate-x-0">
-                <span class="text-slate-400 hover:text-indigo-500 p-1 transition-colors dark:text-slate-500 dark:hover:text-indigo-400">
+            <button type="button" data-card-menu-button aria-label="More actions for ${safeTitle}" aria-haspopup="menu" title="More actions" class="pointer-events-auto opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all duration-200 transform translate-x-2 group-hover:translate-x-0 focus:translate-x-0 text-slate-400 hover:text-indigo-500 p-1 rounded-lg hover:bg-slate-100 focus:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 dark:text-slate-500 dark:hover:text-indigo-400 dark:hover:bg-slate-700 dark:focus:bg-slate-700">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path></svg>
-                </span>
-            </div>
+            </button>
         </div>
-        <div class="mt-auto pointer-events-none">
-            <h3 class="font-bold text-slate-700 text-sm mb-0.5 truncate dark:text-slate-200 group-hover:text-indigo-600 transition-colors" title="${node.title}">${node.title}</h3>
-            <p class="text-xs text-slate-400 truncate font-mono opacity-80 dark:text-slate-500">${hostname}</p>
+        <div class="relative z-10 mt-auto pointer-events-none">
+            <h3 class="font-bold text-slate-700 text-sm mb-0.5 truncate dark:text-slate-200 group-hover:text-indigo-600 transition-colors" title="${safeTitle}">${safeTitle}</h3>
+            <p class="text-xs text-slate-400 truncate font-mono opacity-80 dark:text-slate-500">${safeHostname}</p>
         </div>
     `;
+
+    const menuButton = card.querySelector('[data-card-menu-button]');
+    if (menuButton) {
+        menuButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const rect = menuButton.getBoundingClientRect();
+            showContextMenu(rect.right - 144, rect.bottom + 6, node.id, 'bookmark');
+        });
+    }
 
     container.appendChild(card);
 }
@@ -740,16 +757,22 @@ function renderSearchResults(query) {
 
 let contextMenuTargetId = null;
 let contextMenuTargetType = 'bookmark'; // 'bookmark' or 'folder'
+let pendingNewFolderParentId = null;
+let isCreateFolderPending = false;
 let pendingDeleteTarget = null;
 let isDeletePending = false;
 
 const contextMenu = document.getElementById('context-menu');
+const newFolderModal = document.getElementById('new-folder-modal');
+const newFolderForm = document.getElementById('new-folder-form');
+const newFolderNameInput = document.getElementById('new-folder-name');
+const newFolderCancelBtn = document.getElementById('btn-new-folder-cancel');
+const createFolderBtn = document.getElementById('btn-create-folder');
 const editModal = document.getElementById('edit-modal');
 const editTitleInput = document.getElementById('edit-title');
 const editUrlInput = document.getElementById('edit-url');
 const editUrlContainer = editUrlInput.parentElement; // Used to hide/show URL input
 const deleteModal = document.getElementById('delete-modal');
-const deleteModalBadge = document.getElementById('delete-modal-badge');
 const deleteModalTitle = document.getElementById('delete-modal-title');
 const deleteModalDescription = document.getElementById('delete-modal-description');
 const deleteModalName = document.getElementById('delete-modal-name');
@@ -813,18 +836,72 @@ function formatFolderDeleteMeta(totals) {
     return `Contains ${details.join(' and ')}.`;
 }
 
+function setCreateFolderPendingState(isPending) {
+    isCreateFolderPending = isPending;
+    createFolderBtn.disabled = isPending;
+    newFolderCancelBtn.disabled = isPending;
+    newFolderNameInput.disabled = isPending;
+    createFolderBtn.textContent = isPending ? 'Creating...' : 'Create';
+    createFolderBtn.classList.toggle('opacity-75', isPending);
+    createFolderBtn.classList.toggle('cursor-not-allowed', isPending);
+}
+
+function openNewFolderModal(parentId) {
+    pendingNewFolderParentId = parentId;
+    newFolderNameInput.value = '';
+    newFolderModal.classList.remove('hidden');
+    setCreateFolderPendingState(false);
+
+    setTimeout(() => {
+        newFolderNameInput.focus();
+    }, 50);
+}
+
+function closeNewFolderModal(force = false) {
+    if (isCreateFolderPending && !force) return;
+
+    newFolderModal.classList.add('hidden');
+    pendingNewFolderParentId = null;
+    newFolderNameInput.value = '';
+}
+
+function createNewFolder() {
+    if (!pendingNewFolderParentId || isCreateFolderPending) return;
+
+    const name = newFolderNameInput.value.trim();
+    if (!name) {
+        newFolderNameInput.reportValidity();
+        return;
+    }
+
+    setCreateFolderPendingState(true);
+    const parentId = pendingNewFolderParentId;
+
+    chrome.bookmarks.create({
+        parentId,
+        title: name
+    }, () => {
+        if (showBookmarkError('create the folder')) {
+            setCreateFolderPendingState(false);
+            return;
+        }
+
+        closeNewFolderModal(true);
+        loadBookmarks({ selectedFolderId: parentId });
+    });
+}
+
 function setDeleteModalPendingState(isPending) {
     isDeletePending = isPending;
     deleteConfirmBtn.disabled = isPending;
     deleteCancelBtn.disabled = isPending;
-    deleteConfirmBtn.textContent = isPending ? 'Deleting...' : pendingDeleteTarget?.confirmLabel || 'Delete';
+    deleteConfirmBtn.textContent = isPending ? 'Deleting...' : 'Delete';
     deleteConfirmBtn.classList.toggle('opacity-75', isPending);
     deleteConfirmBtn.classList.toggle('cursor-not-allowed', isPending);
 }
 
 function openDeleteModal(config) {
     pendingDeleteTarget = config;
-    deleteModalBadge.textContent = config.type === 'folder' ? 'Folder' : 'Bookmark';
     deleteModalTitle.textContent = config.title;
     deleteModalDescription.textContent = config.description;
     deleteModalName.textContent = config.name;
@@ -866,8 +943,7 @@ document.getElementById('ctx-delete').addEventListener('click', () => {
                 name: getNodeDisplayName(folder, 'folder'),
                 title: 'Delete folder?',
                 description: 'This will permanently remove the folder and everything inside it.',
-                meta: formatFolderDeleteMeta(totals),
-                confirmLabel: 'Delete folder'
+                meta: formatFolderDeleteMeta(totals)
             });
         });
         return;
@@ -885,8 +961,7 @@ document.getElementById('ctx-delete').addEventListener('click', () => {
             name: getNodeDisplayName(bookmark, 'bookmark'),
             title: 'Delete bookmark?',
             description: 'This will permanently remove the bookmark from Chrome.',
-            meta: bookmark.url || '',
-            confirmLabel: 'Delete bookmark'
+            meta: bookmark.url || ''
         });
     });
 });
@@ -894,15 +969,8 @@ document.getElementById('ctx-delete').addEventListener('click', () => {
 // 新建文件夹按钮
 document.getElementById('ctx-new-folder').addEventListener('click', () => {
     if (contextMenuTargetId && contextMenuTargetType === 'folder') {
-        const name = prompt("Enter new folder name:", "New Folder");
-        if (name) {
-            chrome.bookmarks.create({
-                parentId: contextMenuTargetId,
-                title: name
-            }, () => {
-                loadBookmarks();
-            });
-        }
+        hideContextMenu();
+        openNewFolderModal(contextMenuTargetId);
     }
 });
 
@@ -936,6 +1004,26 @@ document.getElementById('btn-cancel').addEventListener('click', () => {
     editModal.classList.add('hidden');
 });
 
+newFolderCancelBtn.addEventListener('click', () => {
+    closeNewFolderModal();
+});
+
+newFolderModal.addEventListener('click', (e) => {
+    const newFolderPanel = newFolderModal.querySelector('[data-new-folder-panel]');
+    if (newFolderPanel && !newFolderPanel.contains(e.target)) {
+        closeNewFolderModal();
+    }
+});
+
+newFolderForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    createNewFolder();
+});
+
+createFolderBtn.addEventListener('click', () => {
+    createNewFolder();
+});
+
 deleteCancelBtn.addEventListener('click', () => {
     closeDeleteModal();
 });
@@ -948,6 +1036,11 @@ deleteModal.addEventListener('click', (e) => {
 });
 
 document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !newFolderModal.classList.contains('hidden')) {
+        closeNewFolderModal();
+        return;
+    }
+
     if (e.key === 'Escape' && !deleteModal.classList.contains('hidden')) {
         closeDeleteModal();
     }
@@ -989,7 +1082,7 @@ document.getElementById('btn-save').addEventListener('click', () => {
                 loadBookmarks(); // 文件夹改名刷新树
             } else {
                 // 更新 UI
-                const card = document.querySelector(`a[data-id="${contextMenuTargetId}"]`);
+                const card = document.querySelector(`[data-bookmark-card][data-id="${contextMenuTargetId}"]`);
                 if (card) {
                     card.querySelector('h3').textContent = updatedNode.title;
                     card.querySelector('h3').title = updatedNode.title;
@@ -1003,7 +1096,16 @@ document.getElementById('btn-save').addEventListener('click', () => {
                     const newIconUrl = getFaviconUrl(updatedNode.url);
                     card.querySelector('img').src = newIconUrl;
 
-                    card.href = updatedNode.url;
+                    const cardLink = card.querySelector('[data-card-link]');
+                    if (cardLink) {
+                        cardLink.href = updatedNode.url;
+                        cardLink.setAttribute('aria-label', `Open ${updatedNode.title || 'Untitled'}`);
+                    }
+
+                    const menuButton = card.querySelector('[data-card-menu-button]');
+                    if (menuButton) {
+                        menuButton.setAttribute('aria-label', `More actions for ${updatedNode.title || 'Untitled'}`);
+                    }
                 }
             }
         });
