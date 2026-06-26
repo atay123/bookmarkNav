@@ -1,0 +1,14 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Markboard extension icon</title>
+  <desc id="desc">A Notion-inspired document and bookmark icon for the Markboard Chrome extension.</desc>
+  <rect width="512" height="512" rx="112" fill="#F8FAFC"/>
+  <rect x="42" y="36" width="428" height="440" rx="96" fill="#F8FAFC"/>
+  <rect x="42" y="36" width="428" height="440" rx="96" stroke="#0F172A" stroke-width="28"/>
+  <path d="M336 36V154C336 176.091 353.909 194 376 194H470" fill="#E0E7FF"/>
+  <path d="M336 36V154C336 176.091 353.909 194 376 194H470" stroke="#0F172A" stroke-width="28" stroke-linejoin="round"/>
+  <path d="M164 155H292" stroke="#0F172A" stroke-width="28" stroke-linecap="round"/>
+  <path d="M164 230H328" stroke="#94A3B8" stroke-width="28" stroke-linecap="round"/>
+  <path d="M164 306H262" stroke="#94A3B8" stroke-width="28" stroke-linecap="round"/>
+  <path d="M164 395V244C164 216.386 186.386 194 214 194H298C325.614 194 348 216.386 348 244V395L256 344L164 395Z" fill="#4F46E5" stroke="#0F172A" stroke-width="28" stroke-linejoin="round"/>
+  <path d="M240 258H272" stroke="#C7D2FE" stroke-width="28" stroke-linecap="round"/>
+</svg>

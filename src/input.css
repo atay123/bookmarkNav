@@ -58,6 +58,10 @@
   .modal-button-secondary {
     @apply inline-flex w-full justify-center rounded-lg bg-white px-3 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50 sm:w-auto transition-colors dark:bg-slate-700 dark:text-slate-200 dark:ring-slate-600 dark:hover:bg-slate-600;
   }
+
+  .toast {
+    @apply fixed right-6 bottom-6 z-[80] inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-lg ring-1 ring-black/5 transition-all duration-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:ring-white/10;
+  }
 }
 
 @layer utilities {

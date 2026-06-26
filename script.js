@@ -679,7 +679,7 @@ function renderSiteCard(node, container, showPath = false) {
 
     card.addEventListener('contextmenu', function (e) {
         e.preventDefault();
-        showContextMenu(e.clientX, e.clientY, node.id, 'bookmark');
+        showContextMenu(e.clientX, e.clientY, node.id, 'bookmark', node.url);
     });
 
     card.innerHTML = `
@@ -705,7 +705,7 @@ function renderSiteCard(node, container, showPath = false) {
             e.stopPropagation();
 
             const rect = menuButton.getBoundingClientRect();
-            showContextMenu(rect.right - 144, rect.bottom + 6, node.id, 'bookmark');
+            showContextMenu(rect.right - 240, rect.bottom + 6, node.id, 'bookmark', node.url);
         });
     }
 
@@ -757,12 +757,16 @@ function renderSearchResults(query) {
 
 let contextMenuTargetId = null;
 let contextMenuTargetType = 'bookmark'; // 'bookmark' or 'folder'
+let contextMenuTargetUrl = '';
 let pendingNewFolderParentId = null;
 let isCreateFolderPending = false;
 let pendingDeleteTarget = null;
 let isDeletePending = false;
+let toastTimer = null;
 
 const contextMenu = document.getElementById('context-menu');
+const toast = document.getElementById('toast');
+const toastMessage = document.getElementById('toast-message');
 const newFolderModal = document.getElementById('new-folder-modal');
 const newFolderForm = document.getElementById('new-folder-form');
 const newFolderNameInput = document.getElementById('new-folder-name');
@@ -779,6 +783,13 @@ const deleteModalName = document.getElementById('delete-modal-name');
 const deleteModalMeta = document.getElementById('delete-modal-meta');
 const deleteCancelBtn = document.getElementById('btn-delete-cancel');
 const deleteConfirmBtn = document.getElementById('btn-delete-confirm');
+const bookmarkContextButtons = [
+    document.getElementById('ctx-open-new-tab'),
+    document.getElementById('ctx-open-new-window'),
+    document.getElementById('ctx-open-incognito'),
+    document.getElementById('ctx-copy-link'),
+    document.getElementById('ctx-bookmark-divider')
+];
 
 // 初始化菜单事件
 document.addEventListener('click', (e) => {
@@ -793,6 +804,50 @@ function showBookmarkError(actionLabel) {
     console.error(`Failed to ${actionLabel}:`, message);
     alert(`Failed to ${actionLabel}: ${message}`);
     return true;
+}
+
+function copyTextToClipboard(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        return navigator.clipboard.writeText(text);
+    }
+
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.top = '-9999px';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+
+    try {
+        const copied = document.execCommand('copy');
+        return copied ? Promise.resolve() : Promise.reject(new Error('Copy command was rejected.'));
+    } finally {
+        textarea.remove();
+    }
+}
+
+function showToast(message) {
+    if (!toast || !toastMessage) return;
+
+    toastMessage.textContent = message;
+    toast.classList.remove('hidden');
+
+    requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-3', 'opacity-0');
+        toast.classList.add('translate-y-0', 'opacity-100');
+    });
+
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+        toast.classList.add('translate-y-3', 'opacity-0');
+        toast.classList.remove('translate-y-0', 'opacity-100');
+
+        setTimeout(() => {
+            toast.classList.add('hidden');
+        }, 200);
+    }, 1800);
 }
 
 function getNodeDisplayName(node, type) {
@@ -921,6 +976,51 @@ function closeDeleteModal(force = false) {
     deleteModal.classList.add('hidden');
     pendingDeleteTarget = null;
 }
+
+document.getElementById('ctx-open-new-tab').addEventListener('click', () => {
+    const url = contextMenuTargetUrl;
+    hideContextMenu();
+    if (!url) return;
+
+    chrome.tabs.create({ url }, () => {
+        showBookmarkError('open the bookmark in a new tab');
+    });
+});
+
+document.getElementById('ctx-open-new-window').addEventListener('click', () => {
+    const url = contextMenuTargetUrl;
+    hideContextMenu();
+    if (!url) return;
+
+    chrome.windows.create({ url }, () => {
+        showBookmarkError('open the bookmark in a new window');
+    });
+});
+
+document.getElementById('ctx-open-incognito').addEventListener('click', () => {
+    const url = contextMenuTargetUrl;
+    hideContextMenu();
+    if (!url) return;
+
+    chrome.windows.create({ url, incognito: true }, () => {
+        showBookmarkError('open the bookmark in an incognito window');
+    });
+});
+
+document.getElementById('ctx-copy-link').addEventListener('click', () => {
+    const url = contextMenuTargetUrl;
+    hideContextMenu();
+    if (!url) return;
+
+    copyTextToClipboard(url)
+        .then(() => {
+            showToast('Link copied');
+        })
+        .catch((error) => {
+            console.error('Failed to copy the bookmark URL:', error);
+            alert('Failed to copy the bookmark URL.');
+        });
+});
 
 // 删除按钮
 document.getElementById('ctx-delete').addEventListener('click', () => {
@@ -1113,41 +1213,50 @@ document.getElementById('btn-save').addEventListener('click', () => {
 });
 
 // 显示菜单函数
-function showContextMenu(x, y, id, type = 'bookmark') {
+function showContextMenu(x, y, id, type = 'bookmark', url = '') {
     contextMenuTargetId = id;
     contextMenuTargetType = type;
-
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-    const mw = 144;
-    const mh = 80; // approximate
-
-    if (x + mw > w) x = x - mw;
-    if (y + mh > h) y = y - mh;
+    contextMenuTargetUrl = type === 'bookmark' ? url : '';
 
     // Toggle buttons based on type
     const newFolderBtn = document.getElementById('ctx-new-folder');
+    bookmarkContextButtons.forEach((button) => {
+        button.classList.toggle('hidden', type !== 'bookmark');
+    });
+
     if (type === 'folder') {
         newFolderBtn.classList.remove('hidden');
     } else {
         newFolderBtn.classList.add('hidden');
     }
 
-    contextMenu.style.left = `${x}px`;
-    contextMenu.style.top = `${y}px`;
+    contextMenu.style.left = '0px';
+    contextMenu.style.top = '0px';
     contextMenu.classList.remove('hidden');
+    contextMenu.classList.add('opacity-0');
+    contextMenu.classList.remove('opacity-100');
+
+    const padding = 8;
+    const menuRect = contextMenu.getBoundingClientRect();
+    const maxX = window.innerWidth - menuRect.width - padding;
+    const maxY = window.innerHeight - menuRect.height - padding;
+    const safeX = Math.max(padding, Math.min(x, maxX));
+    const safeY = Math.max(padding, Math.min(y, maxY));
+
+    contextMenu.style.left = `${safeX}px`;
+    contextMenu.style.top = `${safeY}px`;
 
     requestAnimationFrame(() => {
-        contextMenu.classList.remove('opacity-0', 'scale-95');
-        contextMenu.classList.add('opacity-100', 'scale-100');
+        contextMenu.classList.remove('opacity-0');
+        contextMenu.classList.add('opacity-100');
     });
 }
 
 // 隐藏菜单函数
 function hideContextMenu() {
     if (contextMenu && !contextMenu.classList.contains('hidden')) {
-        contextMenu.classList.add('opacity-0', 'scale-95');
-        contextMenu.classList.remove('opacity-100', 'scale-100');
+        contextMenu.classList.add('opacity-0');
+        contextMenu.classList.remove('opacity-100');
         setTimeout(() => {
             contextMenu.classList.add('hidden');
         }, 100);

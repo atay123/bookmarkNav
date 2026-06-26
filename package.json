@@ -1,6 +1,6 @@
 {
   "name": "bookmarknav",
-  "version": "1.1.3",
+  "version": "1.1.4",
   "main": "script.js",
   "description": "A Chrome extension that replaces the default new tab page with a bookmark navigation dashboard.",
   "author": "atay123",
@@ -13,8 +13,8 @@
   },
   "homepage": "https://github.com/atay123/bookmarkNav#readme",
   "scripts": {
-    "dev": "npx tailwindcss -i ./src/input.css -o ./style.css --watch",
-    "build": "npx tailwindcss -i ./src/input.css -o ./style.css --minify",
+    "dev": "BROWSERSLIST_IGNORE_OLD_DATA=1 npx tailwindcss -i ./src/input.css -o ./style.css --watch",
+    "build": "BROWSERSLIST_IGNORE_OLD_DATA=1 npx tailwindcss -i ./src/input.css -o ./style.css --minify",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
