@@ -3,6 +3,7 @@ let allBookmarks = [];
 let currentFolder = null;
 let expandedFolders = new Set(); // Store IDs of expanded folders
 let draggedFolderNode = null; // Store the currently dragged folder node
+const LAST_SELECTED_FOLDER_KEY = 'lastSelectedFolderId';
 
 // --- 主题切换逻辑 ---
 let currentThemePreference = localStorage.getItem('color-theme') || 'system'; // Default to system
@@ -84,28 +85,45 @@ function loadBookmarks(options = {}) {
     chrome.bookmarks.getTree(function (bookmarkTreeNodes) {
         allBookmarks = bookmarkTreeNodes;
         const rootNode = bookmarkTreeNodes[0];
+        const storedFolderId = localStorage.getItem(LAST_SELECTED_FOLDER_KEY);
+        const preferredFolderIds = [selectedFolderId, storedFolderId].filter(Boolean);
+        let selectedFolder = null;
 
-        renderBookmarkTree(rootNode);
+        for (const folderId of preferredFolderIds) {
+            const candidate = findNodeById(rootNode, folderId);
+            if (candidate && Array.isArray(candidate.children)) {
+                selectedFolder = candidate;
+                break;
+            }
+        }
+
+        if (!selectedFolder) {
+            selectedFolder = findFirstFolder(rootNode);
+        }
+
+        if (storedFolderId) {
+            const storedNode = findNodeById(rootNode, storedFolderId);
+            if (!storedNode || !Array.isArray(storedNode.children)) {
+                localStorage.removeItem(LAST_SELECTED_FOLDER_KEY);
+            }
+        }
+
+        renderBookmarkTree(rootNode, selectedFolder ? selectedFolder.id : null);
 
         const searchInput = document.getElementById('search-input');
         const activeQuery = preserveSearch && searchInput ? searchInput.value.trim() : '';
         if (activeQuery) {
+            if (selectedFolder) {
+                currentFolder = selectedFolder;
+                saveSelectedFolder(selectedFolder.id);
+                updateFolderSelection(selectedFolder.id);
+            }
             renderSearchResults(activeQuery);
             return;
         }
 
-        if (selectedFolderId) {
-            const selectedFolder = findNodeById(rootNode, selectedFolderId);
-            if (selectedFolder && selectedFolder.children) {
-                renderBookmarkSites(selectedFolder);
-                return;
-            }
-        }
-
-        // 默认显示第一个有内容的文件夹
-        let defaultFolder = findFirstFolder(rootNode);
-        if (defaultFolder) {
-            renderBookmarkSites(defaultFolder);
+        if (selectedFolder) {
+            renderBookmarkSites(selectedFolder);
         }
     });
 }
@@ -135,6 +153,45 @@ function findNodeById(node, targetId) {
     }
 
     return null;
+}
+
+function saveSelectedFolder(folderId) {
+    if (folderId) {
+        localStorage.setItem(LAST_SELECTED_FOLDER_KEY, folderId);
+    }
+}
+
+function expandFolderAncestors(node, targetId) {
+    if (!node || !node.children) return false;
+    if (node.id === targetId) return true;
+
+    for (const child of node.children) {
+        if (expandFolderAncestors(child, targetId)) {
+            if (node.id !== '0') expandedFolders.add(node.id);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function updateFolderSelection(folderId) {
+    document.querySelectorAll('.bookmark-folder-item').forEach((element) => {
+        const isSelected = element.dataset.id === folderId;
+
+        element.classList.toggle('border-indigo-500', isSelected);
+        element.classList.toggle('bg-indigo-50', isSelected);
+        element.classList.toggle('text-indigo-700', isSelected);
+        element.classList.toggle('dark:border-indigo-500', isSelected);
+        element.classList.toggle('dark:bg-indigo-900/20', isSelected);
+        element.classList.toggle('dark:text-indigo-300', isSelected);
+
+        element.classList.toggle('border-transparent', !isSelected);
+        element.classList.toggle('text-slate-600', !isSelected);
+        element.classList.toggle('hover:bg-slate-100', !isSelected);
+        element.classList.toggle('dark:text-slate-400', !isSelected);
+        element.classList.toggle('dark:hover:bg-slate-800', !isSelected);
+    });
 }
 
 // 面包屑更新逻辑
@@ -208,7 +265,7 @@ function renderBreadcrumbs(path) {
 
 
 // 渲染左侧书签目录树
-function renderBookmarkTree(bookmark) {
+function renderBookmarkTree(bookmark, selectedFolderId = null) {
     const treeContainer = document.getElementById('bookmark-tree');
     treeContainer.innerHTML = '';
 
@@ -233,6 +290,11 @@ function renderBookmarkTree(bookmark) {
 
     function saveExpandedState() {
         localStorage.setItem('expandedFolders', JSON.stringify([...expandedFolders]));
+    }
+
+    if (selectedFolderId) {
+        expandFolderAncestors(bookmark, selectedFolderId);
+        saveExpandedState();
     }
 
     // 辅助函数：检查是否为后代节点（防止拖拽死循环）
@@ -343,15 +405,6 @@ function renderBookmarkTree(bookmark) {
                         renderBookmarkSites(results[0]);
                     }
                 });
-
-                // 3. Visual Selection State
-                document.querySelectorAll('.bookmark-folder-item').forEach(el => {
-                    el.classList.remove('border-indigo-500', 'bg-indigo-50', 'text-indigo-700', 'dark:border-indigo-500', 'dark:bg-indigo-900/20', 'dark:text-indigo-300');
-                    el.classList.add('border-transparent', 'text-slate-600', 'hover:bg-slate-100', 'dark:text-slate-400', 'dark:hover:bg-slate-800');
-                });
-
-                nodeElement.classList.remove('border-transparent', 'text-slate-600', 'hover:bg-slate-100', 'dark:text-slate-400', 'dark:hover:bg-slate-800');
-                nodeElement.classList.add('border-indigo-500', 'bg-indigo-50', 'text-indigo-700', 'dark:border-indigo-500', 'dark:bg-indigo-900/20', 'dark:text-indigo-300');
             });
 
             // --- 右键菜单 (文件夹) ---
@@ -506,6 +559,8 @@ function renderBookmarkSites(folder) {
     const sitesContainer = document.getElementById('bookmark-sites');
     sitesContainer.innerHTML = '';
     currentFolder = folder;
+    saveSelectedFolder(folder.id);
+    updateFolderSelection(folder.id);
 
     updateBreadcrumbs(folder);
 

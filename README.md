@@ -11,6 +11,7 @@ A Chrome extension that replaces the default New Tab page with a bookmark-first 
 ## Features
 
 - Bookmark tree navigation: Expand/collapse multi-level folders and persist the expanded state.
+- Resume navigation: Reopen new tabs in the last selected bookmark folder.
 - Card-based bookmark grid: Display bookmarks as cards and load site favicons automatically.
 - Context menu management: Edit/delete bookmarks; create subfolders, rename, and delete folders.
 - Custom delete confirmation: Built-in confirmation modal for deleting bookmarks/folders, with folder item counts.
@@ -111,6 +112,7 @@ bookmarkNav/
 ## Manual Check List
 
 - Bookmark tree renders and expands correctly.
+- The last selected folder is restored, highlighted, and revealed after reopening a new tab.
 - Context menus open correctly.
 - UI refreshes correctly after editing bookmarks and folders.
 - Delete confirmation modals behave correctly and results stay in sync after deletion.
