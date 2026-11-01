@@ -18,6 +18,7 @@ A Chrome extension that replaces the default New Tab page with a bookmark-first 
 - Drag & drop organization: Reorder bookmarks within the grid or drag them into folders in the tree.
 - Folder drag & drop: Reorder folders and nest them under other folders.
 - Real-time search: Filter results as you type and show the parent folder tag on result cards.
+- AI semantic search: Configure a custom OpenAI-compatible LLM endpoint (DeepSeek, SiliconFlow, OpenAI, Gemini, local Ollama, etc.) to find bookmarks by natural language description when you don't remember the exact site name.
 - Theme modes: Light, dark, and system themes.
 - Empty state guidance: Helpful prompts when a folder has no items.
 
@@ -35,11 +36,13 @@ A Chrome extension that replaces the default New Tab page with a bookmark-first 
 
 - `bookmarks`: Read/create/update/delete bookmarks and folders, including changes required by drag-and-drop.
 - `favicon`: Read site favicons for bookmark cards.
+- `storage`: Store AI search settings and provider API keys locally in `chrome.storage.local` (never synced).
+- `optional_host_permissions` (`http://*/*`, `https://*/*`): Requested dynamically only for the specific LLM API host you configure when testing or saving AI search settings.
 
 ## Privacy
 
-- All bookmark data is read and processed locally in your browser.
-- No bookmark data is collected or uploaded, and no remote backend is required.
+- All bookmark data is read and processed locally in your browser by default.
+- When you trigger AI search, bookmark titles, folder names, and domains (without query parameters or full URLs) are sent only to the LLM endpoint you configured.
 
 ## Development
 
@@ -82,10 +85,17 @@ npm run build
 bookmarkNav/
 ├── manifest.json
 ├── newtab.html
+├── ai-search.js
 ├── script.js
 ├── style.css
 ├── src/
 │   └── input.css
+├── assets/
+│   ├── icon-16.png
+│   ├── icon-48.png
+│   └── icon-128.png
+├── design/
+│   └── logo/
 ├── tailwind.config.js
 ├── package.json
 ├── package-lock.json
@@ -102,6 +112,8 @@ bookmarkNav/
 - Right-click a folder: Create a subfolder, rename, or delete the folder.
 - Drag a bookmark card: Reorder it or move it into a folder in the tree.
 - Drag a folder: Reorder it or change nesting.
+- Search input `Enter`: Open the first matching bookmark card (or run AI search if there are no keyword matches and AI is configured).
+- Search input `⌘+Enter` / `Ctrl+Enter`: Trigger AI semantic search directly.
 
 ## Security
 
