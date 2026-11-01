@@ -16,7 +16,7 @@
     "dev": "BROWSERSLIST_IGNORE_OLD_DATA=1 npx tailwindcss -i ./src/input.css -o ./style.css --watch",
     "build": "BROWSERSLIST_IGNORE_OLD_DATA=1 npx tailwindcss -i ./src/input.css -o ./style.css --minify",
     "package": "npm run build && mkdir -p dist && rm -f dist/bookmark-navigation-$npm_package_version.zip && zip -r dist/bookmark-navigation-$npm_package_version.zip manifest.json newtab.html script.js ai-search.js style.css assets -x '*.DS_Store'",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test tests/*.test.js"
   },
   "keywords": [
     "chrome-extension",

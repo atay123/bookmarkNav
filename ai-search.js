@@ -253,13 +253,17 @@
         scored.sort((a, b) => b.score - a.score || b.item.dateAdded - a.item.dateAdded || a.item.title.localeCompare(b.item.title));
 
         if (options.includeRecent) {
-            const seenIds = new Set(scored.map(entry => entry.item.id));
+            const scoredById = new Map(scored.map(entry => [entry.item.id, entry]));
             const recentItems = [...catalog]
-                .filter(item => item.dateAdded > 0 && !seenIds.has(item.id))
+                .filter(item => item.dateAdded > 0)
                 .sort((a, b) => b.dateAdded - a.dateAdded)
-                .slice(0, 30)
-                .map(item => ({ item, score: 0.5, hits: [] }));
-            return [...scored.slice(0, Math.max(0, limit - recentItems.length)), ...recentItems].slice(0, limit);
+                .slice(0, Math.min(30, limit))
+                .map(item => scoredById.get(item.id) || { item, score: 0.5, hits: [] });
+            const recentIds = new Set(recentItems.map(entry => entry.item.id));
+            const otherMatches = scored
+                .filter(entry => !recentIds.has(entry.item.id))
+                .slice(0, Math.max(0, limit - recentItems.length));
+            return [...otherMatches, ...recentItems];
         }
 
         return scored.slice(0, limit);
@@ -314,7 +318,9 @@
     // 使用短序号代替真实书签 ID，发送标题 / 文件夹 / 域名 / 创建日期（不含完整 URL）
     function buildRerankMessages(query, candidates, now = Date.now()) {
         const today = formatBookmarkDate(now);
-        const yesterday = formatBookmarkDate(now - 86400000);
+        const previousDate = new Date(now);
+        previousDate.setDate(previousDate.getDate() - 1);
+        const yesterday = formatBookmarkDate(previousDate.getTime());
         const lines = candidates
             .map((entry, index) => `${index + 1}|${entry.item.folderPath || '-'}|${entry.item.title}|${entry.item.host || '-'}|${entry.item.addedDate || '-'}`)
             .join('\n');
