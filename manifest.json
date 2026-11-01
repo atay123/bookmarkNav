@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Bookmark Navigation",
-  "version": "1.1.5",
-  "description": "Display browser bookmarks as a navigation dashboard, replacing the default new tab page.",
+  "version": "1.1.6",
+  "description": "Turn your new tab into a bookmark dashboard. Organize with drag and drop, search instantly, or connect your own AI provider.",
   "permissions": [
     "bookmarks",
     "favicon",

@@ -1,140 +1,107 @@
-# Bookmark Navigation Extension
+# Bookmark Navigation
 
 [English](./README.md) | [简体中文](./README.zh-CN.md)
 
-A Chrome extension that replaces the default New Tab page with a bookmark-first navigation dashboard. It uses a folder tree on the left and a bookmark card grid on the right, optimized for browsing, organizing, and searching your bookmarks.
+A Chrome New Tab extension for browsing, organizing, and finding your bookmarks. Navigate a folder tree, arrange bookmark cards, or describe a site to search with your own AI provider.
 
-## Screenshot
+[Install from the Chrome Web Store](https://chromewebstore.google.com/detail/mlokjnacolkepjhncmidkjmbkkfoplkc)
 
-![BookmarkNav UI Screenshot](https://lh3.googleusercontent.com/Lk9FWL2sugDv_1XOwZCcjAfnrjGMbj7D8ZkxG7CACj571De0O4KBlVp-23v4uduakR877S1zdTTBx5ZHBOINVMc-AA=s1280-w1280-h800)
+![Bookmark Navigation promotional artwork](docs/images/hero.png)
+
+*AI-generated promotional artwork. The screenshots below show the actual interface with sample bookmarks; AI results are an illustrative demo.*
 
 ## Features
 
-- Bookmark tree navigation: Expand/collapse multi-level folders and persist the expanded state.
-- Resume navigation: Reopen new tabs in the last selected bookmark folder.
-- Card-based bookmark grid: Display bookmarks as cards and load site favicons automatically.
-- Context menu management: Edit/delete bookmarks; create subfolders, rename, and delete folders.
-- Custom delete confirmation: Built-in confirmation modal for deleting bookmarks/folders, with folder item counts.
-- Drag & drop organization: Reorder bookmarks within the grid or drag them into folders in the tree.
-- Folder drag & drop: Reorder folders and nest them under other folders.
-- Real-time search: Filter results as you type and show the parent folder tag on result cards.
-- AI semantic search: Configure a custom OpenAI-compatible LLM endpoint (DeepSeek, SiliconFlow, OpenAI, Gemini, local Ollama, etc.) to find bookmarks by natural language description when you don't remember the exact site name.
-- Theme modes: Light, dark, and system themes.
-- Empty state guidance: Helpful prompts when a folder has no items.
+- **Folder navigation:** Expand nested folders, follow breadcrumbs, and reopen new tabs in your last selected folder. Expanded folders are remembered too.
+- **Bookmark cards:** Browse titles, domains, and favicons in a responsive grid.
+- **Drag and drop:** Reorder bookmarks and folders, move bookmarks between folders, and change folder nesting.
+- **Quick management:** Use right-click or a card's menu to open, copy, edit, or delete bookmarks. Create, rename, and delete folders with custom confirmation dialogs for deletion.
+- **Instant search:** Filter bookmarks as you type, with folder labels on results.
+- **Optional AI search:** Describe a site's purpose or when you saved it. Results include short matching reasons. Supports OpenAI-compatible endpoints, with presets for DeepSeek, SiliconFlow, OpenAI, Gemini, and local Ollama.
+- **Three themes:** Light, dark, or follow the system.
 
-## Tech Stack
+## Screenshots
 
-- Vanilla JavaScript
-- Tailwind CSS
-- Chrome Extension APIs
-  - `chrome.bookmarks`
-  - `chrome.runtime`
-  - `chrome_url_overrides`
-- Manifest V3
+The light-theme overview and AI search view use sample bookmarks, not a personal bookmark collection. The search image demonstrates the result layout and example matching reasons.
 
-## Permissions
+![Light-theme folder tree and bookmark cards with sample bookmarks](docs/images/overview.png)
 
-- `bookmarks`: Read/create/update/delete bookmarks and folders, including changes required by drag-and-drop.
-- `favicon`: Read site favicons for bookmark cards.
-- `storage`: Store AI search settings and provider API keys locally in `chrome.storage.local` (never synced).
-- `optional_host_permissions` (`http://*/*`, `https://*/*`): Requested dynamically only for the specific LLM API host you configure when testing or saving AI search settings.
+![AI search results with sample bookmarks and illustrative matching reasons](docs/images/ai-search.png)
 
-## Privacy
+<details>
+<summary>Dark theme and AI provider settings</summary>
 
-- All bookmark data is read and processed locally in your browser by default.
-- When you trigger AI search, bookmark titles, folder names, and domains (without query parameters or full URLs) are sent only to the LLM endpoint you configured.
+![Dark-theme navigation with sample bookmarks](docs/images/dark.png)
 
-## Development
+![AI provider settings in the actual interface](docs/images/ai-settings.png)
 
-1. Clone the repo:
+</details>
+
+## AI search setup
+
+1. Open a new tab and click the gear button beside **AI** to open AI search settings.
+2. Select a provider preset or enter an OpenAI-compatible **API Base URL**, **Model**, and **API Key**. Keys are optional for local models that do not require authentication.
+3. Click **Test connection**, allow Chrome access to the configured API host, then click **Save**. Provider keys are remembered separately by endpoint origin.
+4. Enter a description and click **AI**, or press `⌘+Enter` on macOS / `Ctrl+Enter` elsewhere. For example: “a tool for drawing diagrams” or “React tools I saved yesterday.” Press `Esc` or click **Cancel** to stop an active search.
+
+AI receives bookmark creation dates in your browser's local calendar, together with today's and yesterday's dates. Time descriptions help it rank candidates; results depend on the model and the available candidates.
+
+For up to 600 bookmarks, AI evaluates the catalog directly. Larger collections first use AI keyword expansion and local matching, then send at most 120 candidates for ranking. Time-related queries also include up to 30 recent bookmarks. This preselection can omit a matching bookmark in a large collection.
+
+For Ollama, run the selected model locally and allow extension requests with `OLLAMA_ORIGINS="chrome-extension://*"`, then restart Ollama. The settings dialog shows platform-specific guidance.
+
+## Permissions and privacy
+
+- `bookmarks`: Read and manage bookmarks and folders, including drag-and-drop changes.
+- `favicon`: Display site icons on bookmark cards.
+- `storage`: Save AI settings and API keys in this browser's `chrome.storage.local`; keys are not synced by the extension. Folder and theme preferences are also stored locally.
+- Optional HTTP/HTTPS host access: Requested when testing or saving an AI endpoint, for that endpoint's scheme and hostname. Chrome host permissions do not distinguish ports.
+
+Browsing and keyword filtering run locally. When you start an AI search, your search description and candidate **titles, folder paths, domains, and creation dates (`AddedDate`, `YYYY-MM-DD`)** are sent to the endpoint you configured, along with the current local date context. Candidate metadata contains domains instead of full bookmark URLs; URL paths, query strings, and actual bookmark IDs are not sent as candidate fields. The provider's own data handling applies to these requests.
+
+**Clear** in AI settings removes all saved AI endpoints and provider keys, clears the search cache in the current tab, and requests removal of granted AI host permissions. Other open tabs have independent session caches. The button asks for a second click to confirm.
+
+Read the full [Privacy Policy](./PRIVACY.md).
+
+## Installation and development
+
+Install the published version from the [Chrome Web Store](https://chromewebstore.google.com/detail/mlokjnacolkepjhncmidkjmbkkfoplkc), or load a local build:
 
 ```bash
 git clone https://github.com/atay123/bookmarkNav.git
 cd bookmarkNav
-```
-
-2. Install dependencies:
-
-```bash
 npm install
-```
-
-3. Watch Tailwind build in dev:
-
-```bash
-npm run dev
-```
-
-4. Build CSS for release:
-
-```bash
 npm run build
 ```
 
-## Load In Chrome
+Open `chrome://extensions/`, enable **Developer mode**, click **Load unpacked**, and select the project root. Open a new tab to use the extension.
 
-1. Open `chrome://extensions/`
-2. Enable `Developer mode`
-3. Click `Load unpacked`
-4. Select the project root folder
-5. Open a new tab to see the extension
-
-## Project Structure
-
-```text
-bookmarkNav/
-├── manifest.json
-├── newtab.html
-├── ai-search.js
-├── script.js
-├── style.css
-├── src/
-│   └── input.css
-├── assets/
-│   ├── icon-16.png
-│   ├── icon-48.png
-│   └── icon-128.png
-├── design/
-│   └── logo/
-├── tailwind.config.js
-├── package.json
-├── package-lock.json
-├── icon.png
-├── README.md
-└── README.zh-CN.md
+```bash
+npm run dev                 # Watch and rebuild Tailwind CSS
+npm test                    # Node regression tests; no network requests
+node --check script.js
+node --check ai-search.js
+npm run build               # Build minified release CSS
+npm run package             # Build and create the extension ZIP in dist/
 ```
 
-## Interaction Notes
+The app uses vanilla JavaScript, Tailwind CSS, and Chrome Extension APIs under Manifest V3. `newtab.html` defines the interface, `script.js` handles navigation and interaction, `ai-search.js` handles AI requests and matching, and `src/input.css` is the CSS source. Author styles there rather than editing generated `style.css`. Regression tests live in `tests/`.
 
-- Left-click a bookmark card: Open the bookmark.
-- Left-click a folder: Switch the right-side view; click the arrow to expand/collapse the tree.
-- Right-click a bookmark card: Edit or delete the bookmark.
-- Right-click a folder: Create a subfolder, rename, or delete the folder.
-- Drag a bookmark card: Reorder it or move it into a folder in the tree.
-- Drag a folder: Reorder it or change nesting.
-- Search input `Enter`: Open the first matching bookmark card (or run AI search if there are no keyword matches and AI is configured).
-- Search input `⌘+Enter` / `Ctrl+Enter`: Trigger AI semantic search directly.
+## Interaction and manual checks
 
-## Security
+- Click a bookmark to open it; use right-click or its menu for more actions.
+- Click a folder to select it; its arrow expands or collapses nested folders.
+- In search, `Enter` opens the first result. With no keyword matches and AI configured, it starts AI search. `⌘+Enter` / `Ctrl+Enter` starts AI search directly.
+- Verify folder restoration and highlighting after reopening a tab; bookmark and folder drag-and-drop; context menus; edit/save and delete confirmation; theme changes; and search/clear behavior without stale results.
+- Test AI provider setup, host permission prompts, cancellation, and date-based queries. Automated tests cover recent-candidate retention and local dates across daylight saving transitions; they do not replace an unpacked-extension smoke check.
 
-- Manifest V3 compliant.
-- No inline scripts.
-- All UI events are bound dynamically via JavaScript.
+## What's new in 1.1.6
 
-## Manual Check List
+- AI semantic search with configurable providers, local Ollama support, and matching reasons.
+- Bookmark creation dates in AI context, recent-candidate retention, and correct local “yesterday” dates across daylight saving changes.
+- Search cache and stale-result handling improvements, regression tests, and refreshed icons and documentation.
+- Includes the last-selected-folder restoration introduced in 1.1.5.
 
-- Bookmark tree renders and expands correctly.
-- The last selected folder is restored, highlighted, and revealed after reopening a new tab.
-- Context menus open correctly.
-- UI refreshes correctly after editing bookmarks and folders.
-- Delete confirmation modals behave correctly and results stay in sync after deletion.
-- Bookmark drag-and-drop ordering and cross-folder moves work.
-- Search results and clearing search switch views correctly.
+## Acknowledgments and license
 
-## Acknowledgments
-
-Special thanks to [LINUX DO](https://linux.do/) for their support and inspiration.
-
-## License
-
-MIT License. See [LICENSE](./LICENSE).
+Thanks to [LINUX DO](https://linux.do/) for support and inspiration. Released under the [MIT License](./LICENSE).

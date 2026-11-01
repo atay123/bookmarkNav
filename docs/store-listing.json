@@ -1,0 +1,33 @@
+{
+  "release": "1.1.6",
+  "updated": "2026-11-01",
+  "privacy_policy_url": "https://github.com/atay123/bookmarkNav/blob/main/PRIVACY.md",
+  "en": {
+    "name": "Bookmark Navigation",
+    "short_description": "Turn your new tab into a bookmark dashboard with folders, drag and drop, instant search, and optional AI search.",
+    "long_description": "Bookmark Navigation replaces Chrome's new tab page with a dashboard for the bookmarks you already save in Chrome.\n\nBrowse folders in a tree on the left and open bookmarks from a card grid on the right. Reopen a new tab and continue in your last selected folder.\n\nFeatures\n• Browse and expand nested bookmark folders.\n• Reorder bookmarks and folders with drag and drop, or move them into another folder.\n• Edit bookmark titles and URLs, create and rename folders, and delete items with a confirmation dialog.\n• Find bookmarks instantly as you type.\n• Switch between light, dark, and system themes.\n• Optionally find bookmarks by describing their purpose, topic, or when you saved them.\n\nOptional AI search\nConnect your own OpenAI-compatible API endpoint and model. Presets are available for DeepSeek, SiliconFlow, OpenAI, Gemini, and local Ollama. An API key may be required by your provider; local models can be used without one. Your provider's terms and any usage charges apply.\n\nPrivacy and data flow\nBookmark browsing, organization, and keyword search run locally in your browser. AI search is optional. When you run it, your search description and candidate bookmark titles, folder paths, domains, and creation dates are sent to the AI endpoint you configure. The saved full URL field is not included in AI requests. Text within your search, bookmark titles, or folder names is sent as written. For smaller libraries, all bookmark entries may be candidates; larger libraries are filtered locally first.\n\nAI settings and provider API keys are stored in this browser's local extension storage and are not synced by the extension. The key for your selected endpoint is sent to that endpoint to authenticate requests. You can clear saved AI settings and keys from the AI Search settings dialog.\n\nKeyboard shortcut: press Ctrl+Enter or Command+Enter in the search box to run AI search.",
+    "release_notes": "1.1.6\n• Optional AI bookmark search with custom OpenAI-compatible endpoints, including local Ollama.\n• Use bookmark creation dates to help answer searches such as “yesterday” and “recently.”\n• Keep recent bookmarks available during local candidate selection for large libraries.\n• Correct “yesterday” across daylight saving time changes.",
+    "single_purpose": "Replace the new tab page with a bookmark navigation dashboard for browsing, organizing, and finding saved bookmarks, including optional AI-assisted search.",
+    "permission_justifications": {
+      "bookmarks": "Read the bookmark tree to display folders and bookmark cards and to search saved items. Create and rename folders, edit bookmark titles and URLs, delete bookmarks or folders after confirmation, and move or reorder items when the user drags them.",
+      "favicon": "Use Chrome's favicon API to display a site's icon on its bookmark card.",
+      "storage": "Store the user's AI endpoint, model, and API keys per provider in chrome.storage.local. These settings are local to this browser profile and are not synced by the extension.",
+      "optional_host_permissions": "Connect to the OpenAI-compatible AI API host chosen by the user for connection tests and optional AI bookmark search. The manifest declares HTTP and HTTPS as optional because users can configure arbitrary compatible services or a local server such as Ollama. At runtime the extension requests permission only for the configured API host when the user tests or saves the settings. This access is not used to read web page contents."
+    },
+    "remote_code_explanation": "No remotely hosted executable code is loaded. JavaScript and styles are included in the extension package. Responses from the configured AI API are parsed as data and are not executed."
+  },
+  "zh_CN": {
+    "name": "Bookmark Navigation",
+    "short_description": "新标签页书签导航：文件夹浏览、拖拽整理、实时搜索与可选 AI 搜索。",
+    "long_description": "Bookmark Navigation 将 Chrome 新标签页变成书签导航面板，直接使用你保存在 Chrome 中的书签。\n\n左侧浏览多级文件夹，右侧以卡片网格展示书签。再次打开新标签页时，可继续浏览上次选中的文件夹。\n\n主要功能\n• 展开或收起多级书签文件夹。\n• 拖拽调整书签和文件夹顺序，或将它们移动到其他文件夹。\n• 编辑书签标题和网址，创建、重命名文件夹，并通过确认对话框删除项目。\n• 输入关键词，即时筛选书签。\n• 切换浅色、深色或跟随系统主题。\n• 可选 AI 搜索：根据网站用途、主题或收藏时间描述，找回书签。\n\n可选 AI 搜索\n配置你自己的 OpenAI 兼容 API 地址和模型，内置 DeepSeek、硅基流动、OpenAI、Gemini 与本地 Ollama 的快捷配置。API Key 是否必填取决于服务商，本地模型可不填。服务商的使用条款及可能产生的调用费用由相应服务商规定。\n\n隐私与数据流向\n书签浏览、整理和关键词搜索在浏览器本地运行。AI 搜索是可选功能；主动运行时，你的搜索描述及候选书签的标题、文件夹路径、域名和创建日期会发送到你配置的 AI 接口。请求不包含独立的完整书签网址字段；搜索描述、书签标题或文件夹名中的文字会按原文发送。书签数量较少时，全部书签都可能作为候选；数量较多时，先在本地筛选候选。\n\nAI 设置和各服务商的 API Key 保存在当前浏览器的本地扩展存储中，扩展不会同步这些设置。所选接口的 Key 会发送到该接口进行身份验证。你可以在 AI Search 设置中清除已保存的 AI 设置和 Key。\n\n快捷键：在搜索框中按 Ctrl+Enter 或 Command+Enter 运行 AI 搜索。",
+    "release_notes": "1.1.6\n• 支持连接自定义 OpenAI 兼容接口进行 AI 书签搜索，包括本地 Ollama。\n• 将书签创建日期用于“昨天”“最近”等时间相关搜索。\n• 大量书签的本地候选筛选会保留近期收藏的书签。\n• 修正夏令时切换前后“昨天”的日期计算。",
+    "single_purpose": "用书签导航面板替换新标签页，帮助用户浏览、整理和查找已保存的书签，并提供可选的 AI 辅助搜索。",
+    "permission_justifications": {
+      "bookmarks": "读取书签树以显示文件夹、书签卡片并搜索已保存的项目；按用户操作创建或重命名文件夹、编辑书签标题和网址、确认后删除书签或文件夹，并在拖拽时移动或调整项目顺序。",
+      "favicon": "通过 Chrome 提供的 favicon API，在书签卡片上显示网站图标。",
+      "storage": "使用 chrome.storage.local 在本地保存用户配置的 AI 接口地址、模型和各服务商的 API Key。扩展不会同步这些设置。",
+      "optional_host_permissions": "仅用于访问用户配置的 OpenAI 兼容 AI 接口，执行连接测试和可选的 AI 书签搜索。由于支持任意兼容服务及本地 Ollama 等服务器，清单将 HTTP 和 HTTPS 访问声明为可选权限；用户测试或保存设置时，才为所配置的接口主机申请访问权限。此访问不用于读取网页内容。"
+    },
+    "remote_code_explanation": "不加载远程托管的可执行代码。JavaScript 和样式均包含在扩展安装包中。AI 接口返回的内容仅作为数据解析，不会执行。"
+  }
+}

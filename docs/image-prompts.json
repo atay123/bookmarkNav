@@ -1,0 +1,29 @@
+{
+  "updated": "2026-11-01",
+  "mode": "built-in image_gen tool",
+  "fallback_cli_used": false,
+  "reference_image": "assets/icon-128.png",
+  "reference_role": "Existing brand-mark reference; original extension icon unchanged.",
+  "assets": [
+    {
+      "path": "docs/images/hero.png",
+      "purpose": "Chrome Web Store top promotional banner and README hero",
+      "width": 1400,
+      "height": 560,
+      "format": "RGB PNG",
+      "source": "exec-f67f722b-c89c-443c-b7b0-dd115d9412a9.png",
+      "prompt": "Use case: ads-marketing.\nAsset type: official Chrome Web Store top promotional banner and GitHub README hero.\nTransform a copy of the provided brand icon into a polished, wide promotional artwork for \"Bookmark Navigation\". The input image is the existing brand mark: three stacked indigo/violet rounded bookmark-card shapes, with subtle page tabs. Preserve that recognizable stacked-bookmark identity and indigo color family; do not redesign the actual extension icon.\nComposition: create an ultra-wide 2.5:1 banner intended to be delivered at exactly 1400 by 560 pixels. Compose all meaningful content and text in the central safe area with generous margins, so a gentle final crop to that ratio preserves everything. Use a rich dark slate-blue background with subtle, restrained indigo lighting and crisp editorial contrast. On the left, very large clean modern sans-serif white title on two balanced lines, exactly \"Bookmark\" and \"Navigation\". Beneath it, a short legible line exactly \"Browse. Organize. Ask AI.\" On the right, a premium dimensional illustration of the reference indigo stacked bookmark symbol with a few abstract floating bookmark cards, softly lit edges, calm depth and precise geometry. No real or invented application screenshot, no miniature UI, no browser chrome, no product feature claims beyond the supplied text.\nStyle: exceptionally clean official software launch art, elegant, confident, generous negative space, sophisticated slate/indigo palette. Matte surfaces and subtle gradients; no excessive sparkle, no loud neon.\nExact text only: \"Bookmark Navigation\" and \"Browse. Organize. Ask AI.\" Ensure every letter is readable, correctly spelled, with no extra text.\nAvoid: watermarks, extra logos, badges, ratings, prices, \"free\" claims, fake UI, small unreadable text, borders, transparency. Opaque full-bleed background."
+    },
+    {
+      "path": "docs/images/promo-small.png",
+      "purpose": "Chrome Web Store small promotional tile",
+      "width": 440,
+      "height": 280,
+      "format": "RGB PNG",
+      "source": "exec-21a34653-00d2-45d0-9b70-072235187318.png",
+      "prompt": "Use case: ads-marketing.\nAsset type: official Chrome Web Store small promotional tile.\nTransform a copy of the provided Bookmark Navigation brand icon into a polished compact promotional artwork. Image 1 is the established brand mark: three stacked indigo/violet rounded bookmark-card shapes with small page tabs. Preserve this recognizable stacked bookmark identity and indigo color family.\nComposition: horizontal aspect ratio exactly 11:7, intended final size 440 by 280 pixels. Make the words highly legible at that final size. Dark slate-blue opaque background with subtle indigo light. The left two-thirds contain a bold white modern sans-serif title exactly \"Bookmark\" on one line and \"Navigation\" on the next. Below it, smaller but still clear text exactly \"Browse. Organize. Ask AI.\" The right third holds one large dimensional indigo stacked-bookmark brand symbol inspired faithfully by the reference, simple and striking, with a soft tasteful glow. Content must sit inside comfortable 8-percent safe margins on all four edges so any gentle final crop preserves all text. Do not use a tiny UI screenshot or decorative microtext.\nStyle: premium official software-store promotional tile, clean editorial typography, sophisticated dark slate and indigo palette, crisp text, restrained matte 3D depth and soft gradients; uncluttered, balanced, confident. Opaque full bleed.\nText verbatim only: \"Bookmark Navigation\" and \"Browse. Organize. Ask AI.\" Ensure every letter is correctly spelled and readable.\nAvoid: extra text, watermarks, badges, ratings, prices, \"free\" claims, claims AI needs no setup, browser chrome, invented app interfaces, small unreadable text, transparency."
+    }
+  ],
+  "postprocessing": "Deterministic Pillow LANCZOS resize to exact dimensions and RGB conversion only; no redrawing, overlays, or generated replacement elements.",
+  "visual_validation": "Both final images viewed after conversion; required brand title and tagline readable and uncropped."
+}

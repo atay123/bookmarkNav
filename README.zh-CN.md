@@ -1,138 +1,107 @@
-# Bookmark Navigation Extension
+# Bookmark Navigation 书签导航
 
 [English](./README.md) | [简体中文](./README.zh-CN.md)
 
-一个用来替换 Chrome 默认新标签页的书签导航扩展。界面采用左侧文件夹树 + 右侧书签卡片网格布局，适合快速浏览、整理和搜索浏览器书签。
+将 Chrome 新标签页变成书签导航：浏览文件夹树、整理书签卡片，或接入自己的 AI 服务，通过描述找回网站。
 
-## 截图
+[从 Chrome 应用商店安装](https://chromewebstore.google.com/detail/mlokjnacolkepjhncmidkjmbkkfoplkc)
 
-![BookmarkNav UI Screenshot](https://lh3.googleusercontent.com/Lk9FWL2sugDv_1XOwZCcjAfnrjGMbj7D8ZkxG7CACj571De0O4KBlVp-23v4uduakR877S1zdTTBx5ZHBOINVMc-AA=s1280-w1280-h800)
+![Bookmark Navigation 宣传图](docs/images/hero.png)
+
+*宣传图由 AI 生成。下方截图展示真实界面，使用示例书签；AI 搜索结果为演示内容。*
 
 ## 功能
 
-- 书签树导航：左侧支持多层级文件夹展开、折叠，并记住展开状态。
-- 卡片式书签视图：右侧以卡片展示书签，并自动读取站点 favicon。
-- 右键快捷管理：支持编辑、删除书签，以及为文件夹新建子文件夹、重命名、删除。
-- 自定义删除确认：删除书签或文件夹时使用内置确认弹窗；删除文件夹时会显示包含的书签和子文件夹数量。
-- 拖拽整理：支持在网格内调整书签顺序，也支持将书签拖到左侧文件夹中归档。
-- 文件夹拖拽：支持拖拽调整文件夹顺序，并支持嵌套到其他文件夹下。
-- 实时搜索：顶部搜索框会实时过滤书签结果，并在结果卡片上显示父级文件夹标签。
-- AI 语义搜索：支持接入自定义 OpenAI 兼容大模型接口（DeepSeek、硅基流动、OpenAI、Gemini、本地 Ollama 等），通过自然语言描述网站用途即可找回书签。
-- 主题切换：支持浅色、深色和跟随系统三种主题模式。
-- 空状态引导：空文件夹会显示提示信息，方便用户继续整理书签。
+- **文件夹导航：** 支持多层级文件夹、面包屑导航，打开新标签页时恢复上次选中的文件夹，同时记住目录展开状态。
+- **书签卡片：** 在自适应网格中显示标题、域名和站点图标。
+- **拖拽整理：** 调整书签与文件夹顺序、跨文件夹移动书签，以及改变文件夹嵌套层级。
+- **快捷管理：** 通过右键或卡片菜单打开、复制、编辑和删除书签；新建、重命名或删除文件夹。删除操作使用自定义确认弹窗。
+- **即时搜索：** 输入时实时过滤书签，结果显示所属文件夹。
+- **可选 AI 搜索：** 描述网站用途或收藏时间，查看带简短匹配理由的结果。支持 OpenAI 兼容接口，提供 DeepSeek、硅基流动、OpenAI、Gemini 和本地 Ollama 预设。
+- **三种主题：** 浅色、深色或跟随系统。
 
-## 技术栈
+## 截图
 
-- Vanilla JavaScript
-- Tailwind CSS
-- Chrome Extension APIs
-  - `chrome.bookmarks`
-  - `chrome.runtime`
-  - `chrome_url_overrides`
-- Manifest V3
+浅色导航和 AI 搜索截图均使用示例书签，不包含个人书签集合。搜索截图用于展示结果布局及示例匹配理由。
 
-## 权限说明
+![浅色主题下的文件夹树和示例书签卡片](docs/images/overview.png)
 
-- `bookmarks`: 读取、创建、编辑、删除书签与文件夹，并支持拖拽整理所需的书签结构变更。
-- `favicon`: 读取站点 favicon 用于书签卡片展示。
-- `storage`: 在本地 `chrome.storage.local` 中按服务商分别保存 AI 搜索配置与 API Key（不随账号同步）。
-- `optional_host_permissions` (`http://*/*`, `https://*/*`): 仅在你测试或保存 AI 接口时，按所填接口域名动态申请访问权限。
+![使用示例书签和演示匹配理由的 AI 搜索结果](docs/images/ai-search.png)
 
-## 隐私 / 数据
+<details>
+<summary>深色主题与 AI 服务商设置</summary>
 
-- 默认情况下，所有书签数据仅在本地浏览器中读取与处理。
-- 当你主动触发 AI 搜索时，仅会将书签的标题、文件夹名和域名（不含完整 URL 参数）发送给你自己配置的大模型接口进行语义匹配。
+![使用示例书签的深色主题导航](docs/images/dark.png)
 
-## 开发
+![真实界面中的 AI 服务商设置](docs/images/ai-settings.png)
 
-1. 克隆仓库：
+</details>
+
+## 配置 AI 搜索
+
+1. 打开新标签页，点击 **AI** 旁的齿轮按钮，打开 AI 搜索设置。
+2. 选择服务商预设，或填写兼容 OpenAI 的 **API Base URL**、**Model** 和 **API Key**。不要求身份验证的本地模型可以不填 Key。
+3. 点击 **Test connection**，允许 Chrome 访问所配置的 API 主机，然后点击 **Save**。不同接口来源的 Key 会分别保存。
+4. 输入描述后点击 **AI**，或按 macOS 的 `⌘+Enter` / 其他系统的 `Ctrl+Enter`。例如：“可以画流程图的工具”或“昨天收藏的 React 工具”。搜索进行中可按 `Esc` 或点击 **Cancel** 取消。
+
+AI 会收到按浏览器本地日期换算的书签创建日期，以及今天、昨天的日期。时间描述可帮助模型筛选和排序；结果取决于模型和进入筛选的候选书签。
+
+书签不超过 600 条时，直接交给 AI 筛选；超过 600 条时，先由 AI 扩展关键词，在本地匹配，再发送最多 120 个候选进行排序。涉及时间的查询还会加入最多 30 条近期书签。大型书签集合中的匹配项可能因预筛选而遗漏。
+
+使用 Ollama 时，请先在本地运行所选模型，设置 `OLLAMA_ORIGINS="chrome-extension://*"` 以允许扩展请求，再重启 Ollama。设置弹窗提供对应系统的操作提示。
+
+## 权限与隐私
+
+- `bookmarks`：读取和管理书签、文件夹，包括拖拽引起的结构调整。
+- `favicon`：在书签卡片上显示站点图标。
+- `storage`：将 AI 配置和 API Key 保存在当前浏览器的 `chrome.storage.local` 中，扩展不会同步 Key。文件夹和主题偏好也保存在本地。
+- 可选 HTTP/HTTPS 主机访问权限：测试或保存 AI 接口时，按该接口的协议和主机名申请。Chrome 主机权限不区分端口。
+
+浏览书签和关键词过滤在本地运行。主动发起 AI 搜索时，搜索描述、候选书签的**标题、文件夹路径、域名和创建日期（`AddedDate`，`YYYY-MM-DD`）**，以及当前本地日期上下文，会发送到你配置的接口。候选数据使用域名代替完整书签 URL，不将 URL 路径、查询参数或真实书签 ID 作为候选字段发送。服务商自身的数据处理规则适用于这些请求。
+
+AI 设置中的 **Clear** 会删除所有已保存的 AI 接口和服务商 Key、清除当前标签页的搜索缓存，并请求撤销已授予的 AI 主机访问权限。其他已打开的标签页拥有各自独立的会话缓存；需要再次点击按钮确认。
+
+完整说明请参阅[隐私政策](./PRIVACY.md)。
+
+## 安装与开发
+
+从 [Chrome 应用商店](https://chromewebstore.google.com/detail/mlokjnacolkepjhncmidkjmbkkfoplkc)安装已发布版本，或在本地构建：
 
 ```bash
 git clone https://github.com/atay123/bookmarkNav.git
 cd bookmarkNav
-```
-
-2. 安装依赖：
-
-```bash
 npm install
-```
-
-3. 开发模式下监听 Tailwind 构建：
-
-```bash
-npm run dev
-```
-
-4. 生成发布用 CSS：
-
-```bash
 npm run build
 ```
 
-## 在 Chrome 中加载
+打开 `chrome://extensions/`，开启 **Developer mode（开发者模式）**，点击 **Load unpacked（加载已解压的扩展程序）**，选择项目根目录，再打开新标签页。
 
-1. 打开 `chrome://extensions/`
-2. 开启右上角 `Developer mode`
-3. 点击 `Load unpacked`
-4. 选择项目根目录
-5. 打开新标签页查看扩展效果
-
-## 项目结构
-
-```text
-bookmarkNav/
-├── manifest.json
-├── newtab.html
-├── ai-search.js
-├── script.js
-├── style.css
-├── src/
-│   └── input.css
-├── assets/
-│   ├── icon-16.png
-│   ├── icon-48.png
-│   └── icon-128.png
-├── design/
-│   └── logo/
-├── tailwind.config.js
-├── package.json
-├── package-lock.json
-├── icon.png
-├── README.md
-└── README.zh-CN.md
+```bash
+npm run dev                 # 监听并重新构建 Tailwind CSS
+npm test                    # Node 回归测试，不发起网络请求
+node --check script.js
+node --check ai-search.js
+npm run build               # 构建压缩后的发布用 CSS
+npm run package             # 构建并在 dist/ 中生成扩展 ZIP
 ```
 
-## 交互说明
+项目使用原生 JavaScript、Tailwind CSS 和 Chrome Extension APIs，遵循 Manifest V3。`newtab.html` 定义界面，`script.js` 负责导航和交互，`ai-search.js` 负责 AI 请求和匹配，`src/input.css` 是样式源文件。修改样式时请编辑源文件，不要直接修改生成的 `style.css`。回归测试位于 `tests/`。
 
-- 左键点击书签卡片：打开书签页面
-- 左键点击文件夹：切换右侧内容；点击箭头可展开或折叠目录树
-- 右键点击书签卡片：编辑或删除书签
-- 右键点击文件夹：新建子文件夹、重命名或删除文件夹
-- 拖拽书签卡片：调整顺序，或移动到左侧文件夹
-- 拖拽文件夹：调整层级或排序
-- 搜索框按 `Enter`：打开第一个匹配的书签卡片（若关键词无匹配且已配置 AI，则触发 AI 搜索）
-- 搜索框按 `⌘+Enter` / `Ctrl+Enter`：直接触发 AI 语义搜索
+## 交互与手动验证
 
-## 安全
+- 点击书签打开网站，通过右键或卡片菜单执行更多操作。
+- 点击文件夹切换内容，点击箭头展开或折叠下级目录。
+- 搜索框中按 `Enter` 打开首个结果；关键词无结果且已配置 AI 时，发起 AI 搜索。`⌘+Enter` / `Ctrl+Enter` 可直接发起 AI 搜索。
+- 检查重新打开标签页后的文件夹恢复与高亮；书签和文件夹拖拽；右键菜单；编辑保存和删除确认；主题切换；搜索与清空搜索时是否出现过期结果。
+- 检查 AI 服务商配置、主机授权提示、取消搜索和按日期查询。自动化测试覆盖近期候选保留及夏令时切换时的本地日期，仍需对加载的扩展进行手动冒烟检查。
 
-- 遵循 Manifest V3
-- 不使用内联脚本
-- 所有交互事件均通过 JavaScript 动态绑定
+## 1.1.6 更新
 
-## 手动检查清单
+- 新增可配置服务商的 AI 语义搜索，支持本地 Ollama，并显示匹配理由。
+- 在 AI 上下文中加入书签创建日期，保留近期候选，并修正夏令时切换时“昨天”的本地日期。
+- 改进搜索缓存与过期结果处理，加入回归测试，更新图标和文档。
+- 包含 1.1.5 引入的上次所选文件夹恢复功能。
 
-- 书签树能正常渲染和展开
-- 右键菜单能正常打开
-- 编辑书签和文件夹后界面正确刷新
-- 删除确认弹窗正常显示，删除后结果正确同步
-- 书签拖拽排序和跨文件夹移动正常
-- 搜索结果与清空搜索后的视图切换正常
+## 鸣谢与许可
 
-## 鸣谢
-
-特别感谢 [LINUX DO](https://linux.do/) 社区的支持与启发。
-
-## License
-
-MIT License. See [LICENSE](./LICENSE).
+感谢 [LINUX DO](https://linux.do/) 社区的支持与启发。项目采用 [MIT License](./LICENSE)。
