@@ -89,6 +89,21 @@
     // Bookmark catalog + local matching
     // ---------------------------------------------------------------------
 
+    function formatBookmarkDate(timestamp) {
+        const value = Number(timestamp);
+        if (!Number.isFinite(value) || value <= 0) return '';
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return '';
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    function isTimeQuery(query) {
+        return /昨天|今天|前天|最近|刚|新|本周|这周|上周|这个月|上个月|今年|去年|\d{1,2}月|\d{1,2}[日号]|\byesterday\b|\btoday\b|\brecent(?:ly)?\b|\blatest\b|\bnew(?:ly)?\b|\blast\s+(?:week|month|year)\b|\bthis\s+(?:week|month|year)\b|\bdays?\s+ago\b/i.test(String(query || ''));
+    }
+
     function buildCatalog(rootNode) {
         const items = [];
 
@@ -101,12 +116,16 @@
                 const path = parsed ? decodeSafe(parsed.pathname).toLowerCase() : '';
                 const title = node.title || 'Untitled';
                 const folderPath = pathSegments.join(' / ');
+                const dateAdded = Number(node.dateAdded) || 0;
+                const addedDate = formatBookmarkDate(dateAdded);
                 items.push({
                     id: node.id,
                     title,
                     host,
                     folderPath,
                     folderName: pathSegments[pathSegments.length - 1] || '',
+                    dateAdded,
+                    addedDate,
                     titleLower: title.toLowerCase(),
                     folderLower: folderPath.toLowerCase(),
                     pathLower: path
@@ -219,6 +238,10 @@
                     score += 1 * weight;
                     hits.push({ term, field: 'path', weight: 1 * weight });
                 }
+                if (item.addedDate && item.addedDate.includes(term)) {
+                    score += 4 * weight;
+                    hits.push({ term, field: 'date', weight: 4 * weight });
+                }
             });
 
             if (score > 0) {
@@ -227,7 +250,18 @@
             }
         });
 
-        scored.sort((a, b) => b.score - a.score || a.item.title.localeCompare(b.item.title));
+        scored.sort((a, b) => b.score - a.score || b.item.dateAdded - a.item.dateAdded || a.item.title.localeCompare(b.item.title));
+
+        if (options.includeRecent) {
+            const seenIds = new Set(scored.map(entry => entry.item.id));
+            const recentItems = [...catalog]
+                .filter(item => item.dateAdded > 0 && !seenIds.has(item.id))
+                .sort((a, b) => b.dateAdded - a.dateAdded)
+                .slice(0, 30)
+                .map(item => ({ item, score: 0.5, hits: [] }));
+            return [...scored.slice(0, Math.max(0, limit - recentItems.length)), ...recentItems].slice(0, limit);
+        }
+
         return scored.slice(0, limit);
     }
 
@@ -277,10 +311,12 @@
         ];
     }
 
-    // 使用短序号代替真实书签 ID，且只发送标题 / 文件夹 / 域名
-    function buildRerankMessages(query, candidates) {
+    // 使用短序号代替真实书签 ID，发送标题 / 文件夹 / 域名 / 创建日期（不含完整 URL）
+    function buildRerankMessages(query, candidates, now = Date.now()) {
+        const today = formatBookmarkDate(now);
+        const yesterday = formatBookmarkDate(now - 86400000);
         const lines = candidates
-            .map((entry, index) => `${index + 1}|${entry.item.folderPath || '-'}|${entry.item.title}|${entry.item.host || '-'}`)
+            .map((entry, index) => `${index + 1}|${entry.item.folderPath || '-'}|${entry.item.title}|${entry.item.host || '-'}|${entry.item.addedDate || '-'}`)
             .join('\n');
 
         return [
@@ -288,13 +324,13 @@
                 role: 'system',
                 content: [
                     'You are a high-precision bookmark search engine.',
-                    'Each candidate bookmark is formatted as: N|FolderPath|Title|Domain',
-                    'Use the fields AND your knowledge of websites to pick the candidates that genuinely match the user\'s description.',
-                    'Rules: never pad results with loosely related items; return [] in "matches" if nothing fits; order from most to least relevant.',
+                    'Each candidate bookmark is formatted as: N|FolderPath|Title|Domain|AddedDate',
+                    'Use the fields (including AddedDate in YYYY-MM-DD when the user mentions time such as "yesterday", "today", "last week", or "recently") AND your knowledge of websites to pick the candidates that genuinely match the user\'s description.',
+                    'Rules: never pad results with loosely related items; return [] in "matches" if nothing fits; order from most to least relevant (or newest AddedDate first when the query asks for recent bookmarks).',
                     'Respond with JSON only: {"matches": [{"n": 1, "reason": "why it matches, under 20 words, in the user\'s language"}]}'
                 ].join('\n')
             },
-            { role: 'user', content: `Description: ${query}\n\nCandidates:\n${lines}` }
+            { role: 'user', content: `Today: ${today} (Yesterday: ${yesterday})\nDescription: ${query}\n\nCandidates:\n${lines}` }
         ];
     }
 
@@ -734,7 +770,8 @@
             }
 
             candidates = scoreCatalog(catalog, { ...expansion, queryTokens: tokenizeQuery(query) }, {
-                limit: MAX_RERANK_CANDIDATES
+                limit: MAX_RERANK_CANDIDATES,
+                includeRecent: isTimeQuery(query)
             });
             if (candidates.length === 0) {
                 return { matches: [], catalogSize: catalog.length, candidateCount: 0 };
@@ -742,10 +779,11 @@
             onStage('ranking', { candidateCount: candidates.length });
         }
 
+        const today = formatBookmarkDate(Date.now());
         const candidateSignature = JSON.stringify(candidates.map(({ item }) => [
-            item.id, item.folderPath, item.title, item.host
+            item.id, item.folderPath, item.title, item.host, item.addedDate
         ]));
-        const rerankKey = cacheKey(['rerank', endpoint, config.model, query.trim().toLowerCase(), hashString(candidateSignature)]);
+        const rerankKey = cacheKey(['rerank', endpoint, config.model, today, query.trim().toLowerCase(), hashString(candidateSignature)]);
         let matches = cacheGet(rerankKey);
         if (!matches) {
             const content = await requestChatCompletion({
@@ -789,6 +827,7 @@
         getHostPermissionPattern,
         isLocalEndpoint,
         isLikelyOllama,
+        formatBookmarkDate,
         buildCatalog,
         scoreCatalog,
         selectLocalMatches,
