@@ -573,15 +573,18 @@
         return Boolean(config && config.model && normalizeChatCompletionsUrl(config.baseUrl));
     }
 
-    function fingerprint(baseUrl, model, apiKey) {
-        // FNV-1a, only used to detect whether the tested settings changed
-        const input = `${normalizeChatCompletionsUrl(baseUrl)}|${model}|${apiKey}`;
+    function hashString(input) {
+        // FNV-1a, used for compact configuration and catalog signatures
         let hash = 0x811c9dc5;
         for (let i = 0; i < input.length; i += 1) {
             hash ^= input.charCodeAt(i);
             hash = Math.imul(hash, 0x01000193) >>> 0;
         }
         return hash.toString(16);
+    }
+
+    function fingerprint(baseUrl, model, apiKey) {
+        return hashString(`${normalizeChatCompletionsUrl(baseUrl)}|${model}|${apiKey}`);
     }
 
     function hasChromeStorage() {
@@ -739,8 +742,10 @@
             onStage('ranking', { candidateCount: candidates.length });
         }
 
-        const candidateSignature = candidates.map(entry => `${entry.item.id}:${entry.item.title}:${entry.item.host}`).join(',');
-        const rerankKey = cacheKey(['rerank', endpoint, config.model, query.trim().toLowerCase(), fingerprint(candidateSignature, '', '')]);
+        const candidateSignature = JSON.stringify(candidates.map(({ item }) => [
+            item.id, item.folderPath, item.title, item.host
+        ]));
+        const rerankKey = cacheKey(['rerank', endpoint, config.model, query.trim().toLowerCase(), hashString(candidateSignature)]);
         let matches = cacheGet(rerankKey);
         if (!matches) {
             const content = await requestChatCompletion({

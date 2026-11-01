@@ -19,6 +19,7 @@ let aiSearchAbortController = null;
 let pendingAiQueryAfterConfig = '';
 let lastAiSearchState = null; // { query, matches }
 let searchView = { type: 'folder', query: '', count: 0 };
+let searchViewRevision = 0;
 
 const aiSettingsUi = {
     modal: null,
@@ -596,6 +597,7 @@ function renderBookmarkTree(bookmark, selectedFolderId = null) {
 
 // 渲染右侧书签站点
 function renderBookmarkSites(folder) {
+    searchViewRevision += 1;
     cancelActiveAiSearch();
     lastAiSearchState = null;
     searchView = { type: 'folder', query: '', count: 0 };
@@ -961,9 +963,10 @@ function openPrimaryResult() {
 }
 
 function renderSearchResults(query, onRendered) {
+    const revision = ++searchViewRevision;
     chrome.bookmarks.search(query, (results) => {
-        // 忽略过期的回调，避免旧结果覆盖新输入
-        if (getSearchInputValue() !== query) return;
+        // 输入或搜索视图变化后，旧回调及其 Enter 操作都应失效
+        if (revision !== searchViewRevision || getSearchInputValue() !== query) return;
 
         const bookmarkResults = (results || []).filter(node => Boolean(node.url));
         const sitesContainer = document.getElementById('bookmark-sites');
@@ -1057,6 +1060,7 @@ function triggerAiSearch(query) {
 }
 
 async function runAiSearch(query) {
+    searchViewRevision += 1;
     cancelActiveAiSearch();
 
     const controller = new AbortController();
