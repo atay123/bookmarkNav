@@ -5,7 +5,12 @@
   "description": "Display browser bookmarks as a navigation dashboard, replacing the default new tab page.",
   "permissions": [
     "bookmarks",
-    "favicon"
+    "favicon",
+    "storage"
+  ],
+  "optional_host_permissions": [
+    "https://*/*",
+    "http://*/*"
   ],
   "chrome_url_overrides": {
     "newtab": "newtab.html"

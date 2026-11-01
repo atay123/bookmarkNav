@@ -1,6 +1,6 @@
 Generated and refined with the built-in image_gen tool.
 Reference inspiration: https://substack.com/brand
-Original generated PNG: assets/icon-master.png
+Original generated PNG: design/logo/icon-master.png (kept out of the extension package)
 Exports: original transparent square raster resized to 512, 128, 48, and 16 px with Lanczos; alpha preserved.
 
 GENERATION PROMPT
