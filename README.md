@@ -18,6 +18,7 @@ A Chrome extension that replaces the default New Tab page with a bookmark-first 
 - Drag & drop organization: Reorder bookmarks within the grid or drag them into folders in the tree.
 - Folder drag & drop: Reorder folders and nest them under other folders.
 - Real-time search: Filter results as you type and show the parent folder tag on result cards.
+- AI semantic search: Configure a custom OpenAI-compatible LLM endpoint (DeepSeek, SiliconFlow, OpenAI, local Ollama, etc.) to find bookmarks by natural language description when you don't remember the exact site name.
 - Theme modes: Light, dark, and system themes.
 - Empty state guidance: Helpful prompts when a folder has no items.
 

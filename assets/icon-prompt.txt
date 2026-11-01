@@ -1,0 +1,23 @@
+Generated and refined with the built-in image_gen tool.
+Reference inspiration: https://substack.com/brand
+Original generated PNG: assets/icon-master.png
+Exports: original transparent square raster resized to 512, 128, 48, and 16 px with Lanczos; alpha preserved.
+
+GENERATION PROMPT
+Use case: logo-brand.
+Create ONE refined minimalist logo for Bookmark Nav, a Chrome new-tab app that turns browser bookmarks into a website navigation page.
+
+Reference direction: the quiet editorial simplicity and stacked-bookmark rhythm of Substack's logo. Create a fresh original composition rather than reproducing its exact equal-width bars and flag.
+
+Design: a compact vertically stacked "navigation bookmark" symbol with THREE centered tiers, progressively wider from top to bottom:
+1. A short thick horizontal rounded bar at the top.
+2. A slightly wider horizontal row split into TWO equal rounded navigation-tab blocks by a generous transparent gap.
+3. A broad solid bookmark-card shape below, with softly rounded top corners, sturdy sides, and one clear shallow symmetric V notch cut into its bottom.
+Exactly FOUR filled pieces overall. Equal, generous vertical gutters so each tier stays separate at 16px. Compact almost-square overall proportions; the front bookmark is BROAD, not skinny. The upper tiers should feel like organized navigation tabs layered above a saved page. Beautiful optical balance and disciplined spacing. Gently softened corners that match a calm Tailwind application UI.
+
+Color: ONE uniform solid indigo #4F46E5, the app's existing primary accent. Completely flat single-ink print-like color, no shading. Strong silhouette and crisp clean antialiased edges.
+Canvas: square, truly transparent background; symbol centered and occupying approximately 78% of canvas, with even transparent margins.
+A single finished raster logo asset. No name or text, letters, monogram, arrows, grids of extra cards, enclosing tile or frame, gradient, texture, bevel, 3D, lighting, shadow, outline, sparkle, watermark, or presentation board.
+
+SIMPLIFICATION REFINEMENT
+Refine this logo with one focused simplification: replace the TWO middle navigation blocks with ONE continuous shallow horizontal rounded rectangle. It should be approximately the same thickness as the top bar. The final logo must have exactly THREE disconnected indigo shapes: a short top bar, a slightly wider middle bar, and the broad bookmark base. Keep the progressively wider centered stack, clear transparent gutters, bookmark V notch, proportions, indigo palette, overall identity, transparent exterior, and soft clean corners. Slightly restrained corner radii on the horizontal bars, not fully pill-shaped. The result should read as stacked saved pages / bookmark collection, with the simplicity and editorial rhythm requested from the Substack reference, but its own broader rounded geometry. All three shapes uniformly flat #4F46E5. No split blocks, letters, extra geometry, gradients, texture, shadows, bevels, 3D, text, frame, or watermark. One finished raster icon.

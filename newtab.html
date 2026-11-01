@@ -21,10 +21,7 @@
             <div
                 class="px-6 pt-7 pb-4 flex-shrink-0">
                 <h1 class="flex items-center gap-3 text-slate-900 dark:text-slate-100">
-                    <span
-                        class="w-9 h-9 rounded-xl bg-white flex items-center justify-center shadow-sm ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700">
-                        <img src="assets/logo-mark.svg" alt="" class="w-7 h-7" draggable="false">
-                    </span>
+                    <img src="icon.png" alt="" class="w-9 h-9 flex-shrink-0" draggable="false">
                     <span class="text-[1.05rem] font-semibold tracking-[0.02em] leading-none">Bookmark Nav</span>
                 </h1>
             </div>
@@ -60,16 +57,36 @@
 
                     <!-- 右侧工具栏 -->
                     <div class="flex items-center gap-3">
-                        <!-- 书签过滤器 -->
-                        <div class="relative group flex-shrink-0 w-64 transition-all focus-within:w-80">
-                            <input type="text" id="search-input" placeholder="Search bookmarks..."
-                                class="w-full pl-9 pr-4 py-1.5 bg-slate-100 border-transparent rounded-lg text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all dark:bg-slate-800 dark:text-slate-200 dark:focus:bg-slate-700">
-                            <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 transition-colors group-focus-within:text-indigo-500"
+                        <!-- 书签过滤器 (支持关键字实时过滤 + AI 语义搜索) -->
+                        <div class="relative group flex-shrink-0 w-72 transition-all focus-within:w-96">
+                            <input type="text" id="search-input" placeholder="Search or describe for AI (Enter)..."
+                                class="w-full pl-9 pr-16 py-1.5 bg-slate-100 border-transparent rounded-lg text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all dark:bg-slate-800 dark:text-slate-200 dark:focus:bg-slate-700">
+                            <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 transition-colors group-focus-within:text-indigo-500 pointer-events-none"
                                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg>
+                            <button type="button" id="ai-search-btn"
+                                title="AI Semantic Search (Press Enter)"
+                                class="absolute right-1.5 top-1/2 -translate-y-1/2 px-2 py-0.5 rounded-md text-xs font-medium bg-indigo-50 text-indigo-600 hover:bg-indigo-100 active:scale-95 transition-all flex items-center gap-1 dark:bg-indigo-900/40 dark:text-indigo-300 dark:hover:bg-indigo-900/70 focus:outline-none focus:ring-2 focus:ring-indigo-500/50">
+                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                </svg>
+                                <span>AI</span>
+                            </button>
                         </div>
+
+                        <!-- AI 接口设置按钮 -->
+                        <button id="ai-settings-btn"
+                            class="relative p-2 rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-indigo-600 transition-colors dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                            title="AI Search Settings">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
+                            </svg>
+                            <span id="ai-config-dot"
+                                class="hidden absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-800"></span>
+                        </button>
 
                         <!-- 主题切换开关 -->
                         <button id="theme-toggle" class="p-2 rounded-lg bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-indigo-600 transition-colors dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50" title="Toggle theme">
@@ -258,6 +275,99 @@
                         class="modal-button-danger">Delete</button>
                     <button type="button" id="btn-delete-cancel"
                         class="modal-button-secondary">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI 搜索设置模态框 (AI Settings Modal) -->
+    <div id="ai-settings-modal" class="modal-root hidden z-[70]" aria-labelledby="ai-settings-modal-title"
+        role="dialog" aria-modal="true">
+        <div class="modal-backdrop"></div>
+
+        <div class="modal-shell">
+            <div data-ai-settings-panel class="modal-panel sm:max-w-lg">
+                <div class="modal-body">
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 id="ai-settings-modal-title" class="modal-title flex items-center gap-2">
+                            <span class="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center dark:bg-indigo-900/40 dark:text-indigo-400">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
+                                </svg>
+                            </span>
+                            AI Semantic Search Settings
+                        </h3>
+                    </div>
+                    <p class="modal-description mb-4">
+                        Configure an OpenAI-compatible LLM endpoint to find bookmarks by natural language description. Credentials are stored locally in your browser.
+                    </p>
+
+                    <!-- 预设服务商快捷填充 -->
+                    <div class="mb-4">
+                        <span class="block text-xs font-medium text-slate-500 mb-1.5 dark:text-slate-400">Quick Presets</span>
+                        <div class="flex flex-wrap gap-1.5">
+                            <button type="button" data-ai-preset="deepseek"
+                                class="px-2.5 py-1 text-xs font-medium rounded-lg border border-slate-200 bg-slate-50 text-slate-600 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600 transition-colors dark:border-slate-700 dark:bg-slate-700/60 dark:text-slate-300 dark:hover:border-indigo-500/50 dark:hover:bg-indigo-900/30 dark:hover:text-indigo-300">
+                                DeepSeek
+                            </button>
+                            <button type="button" data-ai-preset="siliconflow"
+                                class="px-2.5 py-1 text-xs font-medium rounded-lg border border-slate-200 bg-slate-50 text-slate-600 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600 transition-colors dark:border-slate-700 dark:bg-slate-700/60 dark:text-slate-300 dark:hover:border-indigo-500/50 dark:hover:bg-indigo-900/30 dark:hover:text-indigo-300">
+                                SiliconFlow (硅基流动)
+                            </button>
+                            <button type="button" data-ai-preset="openai"
+                                class="px-2.5 py-1 text-xs font-medium rounded-lg border border-slate-200 bg-slate-50 text-slate-600 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600 transition-colors dark:border-slate-700 dark:bg-slate-700/60 dark:text-slate-300 dark:hover:border-indigo-500/50 dark:hover:bg-indigo-900/30 dark:hover:text-indigo-300">
+                                OpenAI
+                            </button>
+                            <button type="button" data-ai-preset="ollama"
+                                class="px-2.5 py-1 text-xs font-medium rounded-lg border border-slate-200 bg-slate-50 text-slate-600 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600 transition-colors dark:border-slate-700 dark:bg-slate-700/60 dark:text-slate-300 dark:hover:border-indigo-500/50 dark:hover:bg-indigo-900/30 dark:hover:text-indigo-300">
+                                Local Ollama
+                            </button>
+                        </div>
+                    </div>
+
+                    <form id="ai-settings-form" class="space-y-4">
+                        <div>
+                            <label for="ai-base-url" class="modal-label">API Base URL</label>
+                            <input type="url" id="ai-base-url" class="modal-input font-mono text-xs"
+                                placeholder="https://api.deepseek.com/v1" required>
+                        </div>
+                        <div>
+                            <label for="ai-api-key" class="modal-label">API Key</label>
+                            <div class="relative">
+                                <input type="password" id="ai-api-key" class="modal-input pr-9 font-mono text-xs"
+                                    placeholder="sk-..." autocomplete="off">
+                                <button type="button" id="toggle-api-key-visibility"
+                                    class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 focus:outline-none"
+                                    title="Show/Hide API Key">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="ai-model-name" class="modal-label">Model Name</label>
+                            <input type="text" id="ai-model-name" class="modal-input font-mono text-xs"
+                                placeholder="deepseek-chat" required>
+                        </div>
+                    </form>
+
+                    <div id="ai-settings-status" class="hidden mt-4 rounded-lg px-3 py-2 text-xs leading-5"></div>
+                </div>
+
+                <div class="modal-footer justify-between items-center sm:flex-row">
+                    <button type="button" id="btn-ai-test"
+                        class="modal-button-secondary text-xs py-1.5">Test Connection</button>
+                    <div class="flex flex-row-reverse gap-2 w-full sm:w-auto">
+                        <button type="button" id="btn-ai-save"
+                            class="modal-button-primary">Save</button>
+                        <button type="button" id="btn-ai-cancel"
+                            class="modal-button-secondary">Cancel</button>
+                    </div>
                 </div>
             </div>
         </div>

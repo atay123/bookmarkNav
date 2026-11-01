@@ -4,6 +4,31 @@ let currentFolder = null;
 let expandedFolders = new Set(); // Store IDs of expanded folders
 let draggedFolderNode = null; // Store the currently dragged folder node
 const LAST_SELECTED_FOLDER_KEY = 'lastSelectedFolderId';
+const AI_CONFIG_STORAGE_KEY = 'aiSearchConfig';
+
+// AI 搜索运行时状态
+let aiSearchAbortController = null;
+let pendingAiQueryAfterConfig = '';
+let lastAiSearchState = null; // { query: string, matches: Array<{ id: string, reason: string }> }
+
+const AI_PRESETS = {
+    deepseek: {
+        baseUrl: 'https://api.deepseek.com/v1',
+        model: 'deepseek-chat'
+    },
+    siliconflow: {
+        baseUrl: 'https://api.siliconflow.cn/v1',
+        model: 'Qwen/Qwen2.5-7B-Instruct'
+    },
+    openai: {
+        baseUrl: 'https://api.openai.com/v1',
+        model: 'gpt-4o-mini'
+    },
+    ollama: {
+        baseUrl: 'http://localhost:11434/v1',
+        model: 'qwen2.5:7b'
+    }
+};
 
 // --- 主题切换逻辑 ---
 let currentThemePreference = localStorage.getItem('color-theme') || 'system'; // Default to system
@@ -43,6 +68,7 @@ applyTheme(currentThemePreference);
 document.addEventListener('DOMContentLoaded', function () {
     loadBookmarks();
     setupSearch();
+    setupAiSettings();
     setupThemeEventListener(); // Renamed to avoid confusion with immediate apply
 });
 
@@ -118,7 +144,11 @@ function loadBookmarks(options = {}) {
                 saveSelectedFolder(selectedFolder.id);
                 updateFolderSelection(selectedFolder.id);
             }
-            renderSearchResults(activeQuery);
+            if (lastAiSearchState && lastAiSearchState.query === activeQuery) {
+                renderAiSearchResults(lastAiSearchState.query, lastAiSearchState.matches);
+            } else {
+                renderSearchResults(activeQuery);
+            }
             return;
         }
 
@@ -556,6 +586,9 @@ function renderBookmarkTree(bookmark, selectedFolderId = null) {
 
 // 渲染右侧书签站点
 function renderBookmarkSites(folder) {
+    cancelActiveAiSearch();
+    lastAiSearchState = null;
+
     const sitesContainer = document.getElementById('bookmark-sites');
     sitesContainer.innerHTML = '';
     currentFolder = folder;
@@ -695,7 +728,7 @@ function escapeHtml(value) {
 }
 
 // 渲染单个站点卡片
-function renderSiteCard(node, container, showPath = false) {
+function renderSiteCard(node, container, showPath = false, aiReason = '') {
     let hostname = '';
     try {
         const url = new URL(node.url);
@@ -708,6 +741,7 @@ function renderSiteCard(node, container, showPath = false) {
     const safeTitle = escapeHtml(node.title || 'Untitled');
     const safeHostname = escapeHtml(hostname);
     const safeUrl = escapeHtml(node.url);
+    const safeReason = escapeHtml(aiReason);
 
     const card = document.createElement('div');
     card.dataset.id = node.id;
@@ -715,7 +749,7 @@ function renderSiteCard(node, container, showPath = false) {
     card.className = `
         bookmark-card group bg-white rounded-2xl p-5 shadow-[0_2px_8px_rgb(0,0,0,0.04)]
         hover:shadow-[0_8px_24px_rgb(0,0,0,0.08)] hover:-translate-y-1 
-        transition-all duration-300 flex flex-col relative h-32 cursor-pointer
+        transition-all duration-300 flex flex-col relative ${aiReason ? 'h-40' : 'h-32'} cursor-pointer
         dark:bg-slate-800 dark:shadow-none dark:hover:bg-slate-750 dark:hover:shadow-lg dark:hover:shadow-black/20
     `;
     card.className += " overflow-hidden";
@@ -725,7 +759,7 @@ function renderSiteCard(node, container, showPath = false) {
             if (parents && parents.length > 0) {
                 const parentTitle = parents[0].title;
                 const badge = document.createElement('span');
-                badge.className = 'absolute bottom-2 right-2 text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded border border-slate-200 dark:bg-slate-700 dark:text-slate-400 dark:border-slate-600 pointer-events-none opacity-80';
+                badge.className = `absolute ${aiReason ? 'top-5 right-11' : 'bottom-2 right-2'} max-w-[45%] truncate text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded border border-slate-200 dark:bg-slate-700 dark:text-slate-400 dark:border-slate-600 pointer-events-none opacity-80 z-10`;
                 badge.textContent = parentTitle;
                 card.appendChild(badge);
             }
@@ -736,6 +770,15 @@ function renderSiteCard(node, container, showPath = false) {
         e.preventDefault();
         showContextMenu(e.clientX, e.clientY, node.id, 'bookmark', node.url);
     });
+
+    const reasonHtml = aiReason
+        ? `<div class="mt-2 pt-1.5 border-t border-indigo-100/80 dark:border-indigo-900/50 flex items-center gap-1 text-[11px] text-indigo-600 dark:text-indigo-400 truncate" title="${safeReason}">
+            <svg class="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+            </svg>
+            <span class="truncate">${safeReason}</span>
+           </div>`
+        : '';
 
     card.innerHTML = `
         <a href="${safeUrl}" draggable="false" data-card-link class="absolute inset-0 z-0" aria-label="Open ${safeTitle}"></a>
@@ -750,6 +793,7 @@ function renderSiteCard(node, container, showPath = false) {
         <div class="relative z-10 mt-auto pointer-events-none">
             <h3 class="font-bold text-slate-700 text-sm mb-0.5 truncate dark:text-slate-200 group-hover:text-indigo-600 transition-colors" title="${safeTitle}">${safeTitle}</h3>
             <p class="text-xs text-slate-400 truncate font-mono opacity-80 dark:text-slate-500">${safeHostname}</p>
+            ${reasonHtml}
         </div>
     `;
 
@@ -767,10 +811,15 @@ function renderSiteCard(node, container, showPath = false) {
     container.appendChild(card);
 }
 
-// 简单的搜索功能
+// 搜索功能 (支持关键字过滤 + AI 语义搜索)
 function setupSearch() {
     const searchInput = document.getElementById('search-input');
+    const aiSearchBtn = document.getElementById('ai-search-btn');
+
     searchInput.addEventListener('input', (e) => {
+        cancelActiveAiSearch();
+        lastAiSearchState = null;
+
         const query = e.target.value.trim();
         if (!query) {
             if (currentFolder) renderBookmarkSites(currentFolder);
@@ -779,32 +828,662 @@ function setupSearch() {
 
         renderSearchResults(query);
     });
+
+    searchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const query = searchInput.value.trim();
+            if (query) {
+                triggerAiSearchOrOpenSettings(query);
+            }
+        }
+    });
+
+    if (aiSearchBtn) {
+        aiSearchBtn.addEventListener('click', () => {
+            const query = searchInput.value.trim();
+            if (!query) {
+                searchInput.focus();
+                showToast('Enter a description to search with AI');
+                return;
+            }
+            triggerAiSearchOrOpenSettings(query);
+        });
+    }
 }
 
 function renderSearchResults(query) {
     chrome.bookmarks.search(query, (results) => {
+        const bookmarkResults = results.filter(node => Boolean(node.url));
         const sitesContainer = document.getElementById('bookmark-sites');
         sitesContainer.innerHTML = '';
 
+        const safeQuery = escapeHtml(query);
         const breadcrumbsContainer = document.getElementById('breadcrumbs');
         if (breadcrumbsContainer) {
-            breadcrumbsContainer.innerHTML = `<span class="text-slate-500 dark:text-slate-400">Search Results: "${query}" (${results.length})</span>`;
+            breadcrumbsContainer.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <span class="text-slate-500 dark:text-slate-400">Search Results: "${safeQuery}" (${bookmarkResults.length})</span>
+                    <button type="button" id="breadcrumbs-ai-btn"
+                        class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors dark:bg-indigo-900/40 dark:text-indigo-300 dark:hover:bg-indigo-900/60">
+                        <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                        </svg>
+                        Ask AI Instead
+                    </button>
+                </div>
+            `;
+            const bcAiBtn = breadcrumbsContainer.querySelector('#breadcrumbs-ai-btn');
+            if (bcAiBtn) {
+                bcAiBtn.addEventListener('click', () => triggerAiSearchOrOpenSettings(query));
+            }
         }
 
-        if (results.length === 0) {
-            sitesContainer.innerHTML = '<p class="text-center text-slate-400 mt-10">No matching bookmarks found</p>';
+        if (bookmarkResults.length === 0) {
+            sitesContainer.innerHTML = `
+                <div class="flex flex-col items-center justify-center h-96 text-center px-4">
+                    <div class="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-500 flex items-center justify-center mb-4 dark:bg-indigo-900/30 dark:text-indigo-400">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
+                        </svg>
+                    </div>
+                    <p class="text-slate-600 font-medium mb-1 dark:text-slate-300">No exact keyword match for "${safeQuery}"</p>
+                    <p class="text-xs text-slate-400 mb-5 max-w-md dark:text-slate-500">
+                        Can't remember the exact bookmark name? Let AI find relevant bookmarks based on your description.
+                    </p>
+                    <button type="button" id="empty-state-ai-btn"
+                        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold shadow-sm hover:bg-indigo-500 transition-all active:scale-95">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                        </svg>
+                        <span>AI Semantic Search (Enter)</span>
+                    </button>
+                </div>
+            `;
+            const emptyAiBtn = sitesContainer.querySelector('#empty-state-ai-btn');
+            if (emptyAiBtn) {
+                emptyAiBtn.addEventListener('click', () => triggerAiSearchOrOpenSettings(query));
+            }
             return;
         }
 
         const sitesGrid = document.createElement('div');
         sitesGrid.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 pb-10';
 
-        results.forEach(node => {
-            if (node.url) {
-                renderSiteCard(node, sitesGrid, true);
-            }
+        bookmarkResults.forEach(node => {
+            renderSiteCard(node, sitesGrid, true);
         });
         sitesContainer.appendChild(sitesGrid);
+    });
+}
+
+// --- AI 语义搜索与设置逻辑 ---
+
+function getAiConfig() {
+    try {
+        const raw = localStorage.getItem(AI_CONFIG_STORAGE_KEY);
+        if (!raw) return { baseUrl: '', apiKey: '', model: '' };
+        const parsed = JSON.parse(raw);
+        return {
+            baseUrl: (parsed.baseUrl || '').trim(),
+            apiKey: (parsed.apiKey || '').trim(),
+            model: (parsed.model || '').trim()
+        };
+    } catch (e) {
+        return { baseUrl: '', apiKey: '', model: '' };
+    }
+}
+
+function isAiConfigured() {
+    const config = getAiConfig();
+    return Boolean(config.baseUrl && config.model);
+}
+
+function updateAiConfigIndicator() {
+    const dot = document.getElementById('ai-config-dot');
+    if (!dot) return;
+    dot.classList.toggle('hidden', !isAiConfigured());
+}
+
+function normalizeChatCompletionsUrl(baseUrl) {
+    const trimmed = baseUrl.trim().replace(/\/+$/, '');
+    if (/\/chat\/completions$/i.test(trimmed)) {
+        return trimmed;
+    }
+    if (/\/v\d+$/i.test(trimmed)) {
+        return `${trimmed}/chat/completions`;
+    }
+    return `${trimmed}/v1/chat/completions`;
+}
+
+function dehydrateUrl(rawUrl) {
+    try {
+        const parsed = new URL(rawUrl);
+        const host = parsed.hostname.replace(/^www\./, '');
+        const path = parsed.pathname && parsed.pathname !== '/'
+            ? parsed.pathname.slice(0, 60)
+            : '';
+        return `${host}${path}`;
+    } catch (e) {
+        return String(rawUrl || '').slice(0, 80);
+    }
+}
+
+function collectBookmarkCatalog() {
+    const items = [];
+
+    function walk(node, pathSegments) {
+        if (!node) return;
+        const nextPath = node.title && node.id !== '0'
+            ? [...pathSegments, node.title]
+            : pathSegments;
+
+        if (node.url) {
+            items.push({
+                id: node.id,
+                title: node.title || 'Untitled',
+                url: node.url,
+                cleanUrl: dehydrateUrl(node.url),
+                folderPath: pathSegments.join(' / ') || 'Root',
+                node
+            });
+            return;
+        }
+
+        if (Array.isArray(node.children)) {
+            node.children.forEach(child => walk(child, nextPath));
+        }
+    }
+
+    if (Array.isArray(allBookmarks) && allBookmarks.length > 0) {
+        walk(allBookmarks[0], []);
+    }
+
+    return items;
+}
+
+function cancelActiveAiSearch() {
+    if (aiSearchAbortController) {
+        aiSearchAbortController.abort();
+        aiSearchAbortController = null;
+    }
+}
+
+function triggerAiSearchOrOpenSettings(query) {
+    if (!isAiConfigured()) {
+        pendingAiQueryAfterConfig = query;
+        openAiSettingsModal('Please configure your LLM API endpoint first to run AI search.');
+        return;
+    }
+    runAiSearch(query);
+}
+
+function extractJsonArrayFromText(text) {
+    const cleaned = String(text || '').trim();
+    if (!cleaned) return [];
+
+    // Strip markdown code fences if present
+    const fenceMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    const candidate = fenceMatch ? fenceMatch[1].trim() : cleaned;
+
+    try {
+        const parsed = JSON.parse(candidate);
+        if (Array.isArray(parsed)) return parsed;
+        if (parsed && Array.isArray(parsed.matches)) return parsed.matches;
+        if (parsed && Array.isArray(parsed.results)) return parsed.results;
+        if (parsed && Array.isArray(parsed.bookmarks)) return parsed.bookmarks;
+    } catch (e) {
+        // Fallback: locate first [...] block
+        const start = candidate.indexOf('[');
+        const end = candidate.lastIndexOf(']');
+        if (start !== -1 && end > start) {
+            try {
+                const sliced = JSON.parse(candidate.slice(start, end + 1));
+                if (Array.isArray(sliced)) return sliced;
+            } catch (innerError) {
+                console.warn('Failed to parse fallback JSON array:', innerError);
+            }
+        }
+    }
+    return [];
+}
+
+async function runAiSearch(query) {
+    cancelActiveAiSearch();
+
+    const catalog = collectBookmarkCatalog();
+    const sitesContainer = document.getElementById('bookmark-sites');
+    const breadcrumbsContainer = document.getElementById('breadcrumbs');
+    const safeQuery = escapeHtml(query);
+
+    if (catalog.length === 0) {
+        sitesContainer.innerHTML = '<p class="text-center text-slate-400 mt-10">No bookmarks available to search.</p>';
+        return;
+    }
+
+    const controller = new AbortController();
+    aiSearchAbortController = controller;
+
+    if (breadcrumbsContainer) {
+        breadcrumbsContainer.innerHTML = `
+            <div class="flex items-center gap-2 text-indigo-600 dark:text-indigo-400">
+                <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                </svg>
+                <span>AI Searching across ${catalog.length} bookmarks for "${safeQuery}"...</span>
+            </div>
+        `;
+    }
+
+    sitesContainer.innerHTML = `
+        <div class="flex flex-col items-center justify-center h-96 text-center px-4">
+            <div class="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4 animate-pulse dark:bg-indigo-900/40 dark:text-indigo-400">
+                <svg class="w-7 h-7 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                </svg>
+            </div>
+            <p class="text-slate-700 font-medium mb-1 dark:text-slate-200">AI is analyzing your ${catalog.length} bookmarks...</p>
+            <p class="text-xs text-slate-400 mb-5 dark:text-slate-500">Matching titles, folder categories, and domain knowledge for "${safeQuery}"</p>
+            <button type="button" id="cancel-ai-search-btn" class="modal-button-secondary text-xs py-1.5">Cancel</button>
+        </div>
+    `;
+
+    const cancelBtn = sitesContainer.querySelector('#cancel-ai-search-btn');
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', () => {
+            cancelActiveAiSearch();
+            renderSearchResults(query);
+        });
+    }
+
+    const config = getAiConfig();
+    const endpoint = normalizeChatCompletionsUrl(config.baseUrl);
+    const catalogLines = catalog
+        .map(item => `${item.id}|${item.folderPath}|${item.title}|${item.cleanUrl}`)
+        .join('\n');
+
+    const headers = {
+        'Content-Type': 'application/json'
+    };
+    if (config.apiKey) {
+        headers.Authorization = `Bearer ${config.apiKey}`;
+    }
+
+    const systemPrompt = [
+        'You are a high-precision bookmark search engine.',
+        'The user will describe a website or category they bookmarked (what it does, its topic, or rough impression).',
+        'Each bookmark is formatted as: ID|FolderPath|Title|DomainAndPath',
+        'Use the Title, FolderPath, DomainAndPath, AND your own world knowledge of websites/domains to identify genuinely matching bookmarks.',
+        'Strict relevance rules:',
+        '1. Prioritize precision over quantity: NEVER pad results with loosely or tangentially related bookmarks.',
+        '2. Return the exact number of bookmarks that truly match: if only 1-2 bookmarks match, return only 1-2; if more than 12 bookmarks genuinely match a broad query, return all of them.',
+        '3. If nothing genuinely matches the user query, return [].',
+        '4. Order results from most relevant to least relevant.',
+        'Return ONLY a valid JSON array in this exact format, with no markdown or extra text:',
+        '[{"id": "bookmark_id", "reason": "Brief explanation (under 25 words, in the same language as the user query)"}]'
+    ].join('\n');
+
+    try {
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers,
+            signal: controller.signal,
+            body: JSON.stringify({
+                model: config.model,
+                temperature: 0.1,
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    {
+                        role: 'user',
+                        content: `User query: "${query}"\n\nBookmarks:\n${catalogLines}`
+                    }
+                ]
+            })
+        });
+
+        if (!response.ok) {
+            let errorDetail = `HTTP ${response.status}`;
+            try {
+                const errJson = await response.json();
+                errorDetail = errJson.error?.message || errJson.message || errorDetail;
+            } catch (e) {
+                // Ignore JSON parse failure on error body
+            }
+            throw new Error(errorDetail);
+        }
+
+        const data = await response.json();
+        const content = data?.choices?.[0]?.message?.content || '';
+        const parsedMatches = extractJsonArrayFromText(content);
+
+        if (aiSearchAbortController !== controller) return;
+        aiSearchAbortController = null;
+
+        const normalizedMatches = parsedMatches
+            .filter(item => item && item.id !== undefined && item.id !== null)
+            .map(item => ({
+                id: String(item.id).trim(),
+                reason: String(item.reason || '').trim()
+            }));
+
+        lastAiSearchState = { query, matches: normalizedMatches };
+        renderAiSearchResults(query, normalizedMatches);
+    } catch (error) {
+        if (error.name === 'AbortError') return;
+        aiSearchAbortController = null;
+
+        const safeError = escapeHtml(error.message || 'Failed to connect to AI endpoint');
+        if (breadcrumbsContainer) {
+            breadcrumbsContainer.innerHTML = `<span class="text-red-500 dark:text-red-400">AI Search Failed</span>`;
+        }
+        sitesContainer.innerHTML = `
+            <div class="flex flex-col items-center justify-center h-96 text-center px-4">
+                <div class="w-12 h-12 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center mb-3 dark:bg-red-900/30 dark:text-red-400">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                    </svg>
+                </div>
+                <p class="text-slate-700 font-semibold mb-1 dark:text-slate-200">AI Search Request Failed</p>
+                <p class="text-xs text-red-500 mb-5 max-w-md break-all dark:text-red-400">${safeError}</p>
+                <div class="flex items-center gap-3">
+                    <button type="button" id="ai-error-settings-btn" class="modal-button-primary">Check AI Settings</button>
+                    <button type="button" id="ai-error-retry-btn" class="modal-button-secondary">Retry</button>
+                </div>
+            </div>
+        `;
+        const settingsBtn = sitesContainer.querySelector('#ai-error-settings-btn');
+        const retryBtn = sitesContainer.querySelector('#ai-error-retry-btn');
+        if (settingsBtn) {
+            settingsBtn.addEventListener('click', () => {
+                pendingAiQueryAfterConfig = query;
+                openAiSettingsModal();
+            });
+        }
+        if (retryBtn) {
+            retryBtn.addEventListener('click', () => runAiSearch(query));
+        }
+    }
+}
+
+function renderAiSearchResults(query, matches) {
+    const sitesContainer = document.getElementById('bookmark-sites');
+    const breadcrumbsContainer = document.getElementById('breadcrumbs');
+    sitesContainer.innerHTML = '';
+
+    const rootNode = allBookmarks && allBookmarks.length > 0 ? allBookmarks[0] : null;
+    const resolvedItems = [];
+    const seenIds = new Set();
+
+    matches.forEach(match => {
+        if (seenIds.has(match.id)) return;
+        const node = findNodeById(rootNode, match.id);
+        if (node && node.url) {
+            seenIds.add(match.id);
+            resolvedItems.push({ node, reason: match.reason });
+        }
+    });
+
+    const safeQuery = escapeHtml(query);
+    if (breadcrumbsContainer) {
+        breadcrumbsContainer.innerHTML = `
+            <div class="flex items-center gap-3">
+                <span class="inline-flex items-center gap-1.5 text-indigo-600 font-medium dark:text-indigo-400">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                    </svg>
+                    AI Matches for "${safeQuery}" (${resolvedItems.length})
+                </span>
+                <button type="button" id="switch-keyword-search-btn"
+                    class="text-xs text-slate-400 hover:text-indigo-600 transition-colors dark:hover:text-indigo-400">
+                    Show keyword matches
+                </button>
+            </div>
+        `;
+        const switchBtn = breadcrumbsContainer.querySelector('#switch-keyword-search-btn');
+        if (switchBtn) {
+            switchBtn.addEventListener('click', () => {
+                lastAiSearchState = null;
+                renderSearchResults(query);
+            });
+        }
+    }
+
+    if (resolvedItems.length === 0) {
+        sitesContainer.innerHTML = `
+            <div class="flex flex-col items-center justify-center h-96 text-center px-4">
+                <p class="text-slate-600 font-medium mb-1 dark:text-slate-300">AI found no matching bookmarks for "${safeQuery}"</p>
+                <p class="text-xs text-slate-400 mb-4 dark:text-slate-500">Try describing the site with different keywords or topic clues.</p>
+                <button type="button" id="ai-empty-back-btn" class="modal-button-secondary text-xs">Back to keyword search</button>
+            </div>
+        `;
+        const backBtn = sitesContainer.querySelector('#ai-empty-back-btn');
+        if (backBtn) {
+            backBtn.addEventListener('click', () => {
+                lastAiSearchState = null;
+                renderSearchResults(query);
+            });
+        }
+        return;
+    }
+
+    const sitesGrid = document.createElement('div');
+    sitesGrid.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 pb-10';
+
+    resolvedItems.forEach(({ node, reason }) => {
+        renderSiteCard(node, sitesGrid, true, reason);
+    });
+    sitesContainer.appendChild(sitesGrid);
+}
+
+function showAiSettingsStatus(message, type = 'info') {
+    const statusBox = document.getElementById('ai-settings-status');
+    if (!statusBox) return;
+
+    if (!message) {
+        statusBox.classList.add('hidden');
+        statusBox.textContent = '';
+        return;
+    }
+
+    statusBox.className = 'mt-4 rounded-lg px-3 py-2 text-xs leading-5 break-all ';
+    if (type === 'error') {
+        statusBox.className += 'bg-red-50 text-red-600 border border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800/50';
+    } else if (type === 'success') {
+        statusBox.className += 'bg-emerald-50 text-emerald-600 border border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800/50';
+    } else {
+        statusBox.className += 'bg-indigo-50 text-indigo-600 border border-indigo-200 dark:bg-indigo-900/20 dark:text-indigo-300 dark:border-indigo-800/50';
+    }
+    statusBox.textContent = message;
+}
+
+function openAiSettingsModal(initialNotice = '') {
+    const modal = document.getElementById('ai-settings-modal');
+    const baseUrlInput = document.getElementById('ai-base-url');
+    const apiKeyInput = document.getElementById('ai-api-key');
+    const modelInput = document.getElementById('ai-model-name');
+    if (!modal || !baseUrlInput || !apiKeyInput || !modelInput) return;
+
+    const config = getAiConfig();
+    baseUrlInput.value = config.baseUrl;
+    apiKeyInput.value = config.apiKey;
+    apiKeyInput.type = 'password';
+    modelInput.value = config.model;
+
+    showAiSettingsStatus(initialNotice, initialNotice ? 'info' : '');
+    modal.classList.remove('hidden');
+
+    setTimeout(() => {
+        if (!baseUrlInput.value) {
+            baseUrlInput.focus();
+        } else if (!apiKeyInput.value) {
+            apiKeyInput.focus();
+        } else {
+            modelInput.focus();
+        }
+    }, 50);
+}
+
+function closeAiSettingsModal() {
+    const modal = document.getElementById('ai-settings-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+    showAiSettingsStatus('');
+}
+
+async function testAiConnection() {
+    const baseUrlInput = document.getElementById('ai-base-url');
+    const apiKeyInput = document.getElementById('ai-api-key');
+    const modelInput = document.getElementById('ai-model-name');
+    const testBtn = document.getElementById('btn-ai-test');
+
+    const baseUrl = baseUrlInput.value.trim();
+    const apiKey = apiKeyInput.value.trim();
+    const model = modelInput.value.trim();
+
+    if (!baseUrl || !model) {
+        showAiSettingsStatus('Please fill in API Base URL and Model Name first.', 'error');
+        return;
+    }
+
+    const endpoint = normalizeChatCompletionsUrl(baseUrl);
+    const headers = { 'Content-Type': 'application/json' };
+    if (apiKey) {
+        headers.Authorization = `Bearer ${apiKey}`;
+    }
+
+    testBtn.disabled = true;
+    testBtn.textContent = 'Testing...';
+    showAiSettingsStatus(`Connecting to ${endpoint}...`, 'info');
+
+    try {
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+                model,
+                max_tokens: 8,
+                messages: [{ role: 'user', content: 'ping' }]
+            })
+        });
+
+        if (!response.ok) {
+            let errText = `HTTP ${response.status}`;
+            try {
+                const errJson = await response.json();
+                errText = errJson.error?.message || errJson.message || errText;
+            } catch (e) {}
+            throw new Error(errText);
+        }
+
+        showAiSettingsStatus('Connection successful! Ready for AI bookmark search.', 'success');
+    } catch (error) {
+        showAiSettingsStatus(`Connection failed: ${error.message || 'Unknown error'}`, 'error');
+    } finally {
+        testBtn.disabled = false;
+        testBtn.textContent = 'Test Connection';
+    }
+}
+
+function setupAiSettings() {
+    updateAiConfigIndicator();
+
+    const settingsBtn = document.getElementById('ai-settings-btn');
+    const modal = document.getElementById('ai-settings-modal');
+    const form = document.getElementById('ai-settings-form');
+    const baseUrlInput = document.getElementById('ai-base-url');
+    const apiKeyInput = document.getElementById('ai-api-key');
+    const modelInput = document.getElementById('ai-model-name');
+    const toggleKeyBtn = document.getElementById('toggle-api-key-visibility');
+    const testBtn = document.getElementById('btn-ai-test');
+    const saveBtn = document.getElementById('btn-ai-save');
+    const cancelBtn = document.getElementById('btn-ai-cancel');
+
+    if (!settingsBtn || !modal) return;
+
+    settingsBtn.addEventListener('click', () => {
+        pendingAiQueryAfterConfig = '';
+        openAiSettingsModal();
+    });
+
+    modal.querySelectorAll('[data-ai-preset]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const presetKey = btn.dataset.aiPreset;
+            const preset = AI_PRESETS[presetKey];
+            if (!preset) return;
+            baseUrlInput.value = preset.baseUrl;
+            modelInput.value = preset.model;
+            showAiSettingsStatus(`Filled ${btn.textContent.trim()} preset. Enter your API Key and save.`, 'info');
+            apiKeyInput.focus();
+        });
+    });
+
+    if (toggleKeyBtn) {
+        toggleKeyBtn.addEventListener('click', () => {
+            apiKeyInput.type = apiKeyInput.type === 'password' ? 'text' : 'password';
+        });
+    }
+
+    if (testBtn) {
+        testBtn.addEventListener('click', () => {
+            testAiConnection();
+        });
+    }
+
+    const saveSettings = () => {
+        const baseUrl = baseUrlInput.value.trim();
+        const apiKey = apiKeyInput.value.trim();
+        const model = modelInput.value.trim();
+
+        if (!baseUrl || !model) {
+            form.reportValidity();
+            return;
+        }
+
+        localStorage.setItem(AI_CONFIG_STORAGE_KEY, JSON.stringify({
+            baseUrl,
+            apiKey,
+            model
+        }));
+        updateAiConfigIndicator();
+        closeAiSettingsModal();
+        showToast('AI settings saved');
+
+        if (pendingAiQueryAfterConfig) {
+            const queryToRun = pendingAiQueryAfterConfig;
+            pendingAiQueryAfterConfig = '';
+            runAiSearch(queryToRun);
+        }
+    };
+
+    if (saveBtn) {
+        saveBtn.addEventListener('click', saveSettings);
+    }
+
+    if (form) {
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            saveSettings();
+        });
+    }
+
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', () => {
+            pendingAiQueryAfterConfig = '';
+            closeAiSettingsModal();
+        });
+    }
+
+    modal.addEventListener('click', (e) => {
+        const panel = modal.querySelector('[data-ai-settings-panel]');
+        if (panel && !panel.contains(e.target)) {
+            pendingAiQueryAfterConfig = '';
+            closeAiSettingsModal();
+        }
     });
 }
 
@@ -1191,6 +1870,13 @@ deleteModal.addEventListener('click', (e) => {
 });
 
 document.addEventListener('keydown', (e) => {
+    const aiSettingsModal = document.getElementById('ai-settings-modal');
+    if (e.key === 'Escape' && aiSettingsModal && !aiSettingsModal.classList.contains('hidden')) {
+        pendingAiQueryAfterConfig = '';
+        closeAiSettingsModal();
+        return;
+    }
+
     if (e.key === 'Escape' && !newFolderModal.classList.contains('hidden')) {
         closeNewFolderModal();
         return;
